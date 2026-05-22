@@ -1,0 +1,29 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="senaite.core">
+
+  <utility
+      component=".registry.ClientLandingPagesVocabularyFactory"
+      name="senaite.core.vocabularies.registry.client_landing_pages" />
+
+  <utility
+      component=".samplepreservation.CategoriesVocabularyFactory"
+      name="senaite.core.vocabularies.samplepreservation.categories" />
+    
+  <utility
+      component=".stickertemplates.StickerTemplatesVocabularyFactory"
+      name="senaite.core.vocabularies.stickertemplates" />
+
+  <utility
+      component=".analysis_types.AnalysisTypesVocabularyFactory"
+      name="senaite.core.vocabularies.analysis_types" />
+
+  <utility
+      component=".references.ReferenceDefinitionVocabularyFactory"
+      name="senaite.core.vocabularies.reference_definition" />
+
+  <utility
+      component=".analysis_types.DuplicateVocabularyFactory"
+      name="senaite.core.vocabularies.duplicate" />
+
+</configure>

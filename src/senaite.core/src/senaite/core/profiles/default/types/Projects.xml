@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<object name="Projects" meta_type="Dexterity FTI"
+        i18n:domain="senaite.core"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title" i18n:translate="">项目</property>
+  <property name="description" i18n:translate="">Projects section</property>
+
+  <property name="klass">plone.dexterity.content.Container</property>
+  <property name="schema">plone.supermodel.model.Schema</property>
+
+  <property name="global_allow">True</property>
+<!--  <property name="add_view_expr">string:${folder_url}/++add++Projects</property>-->
+
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="projects-by-name"/>
+  </property>
+  <property name="default_view">projects-by-name</property>
+  <property name="immediate_view">view</property>
+
+  <property name="icon_expr">senaite_theme/icon/project</property>
+
+</object>

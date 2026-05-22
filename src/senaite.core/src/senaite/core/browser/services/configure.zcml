@@ -1,0 +1,21 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:browser="http://namespaces.zope.org/browser"
+           i18n_domain="senaite.core">
+
+    <browser:page
+        for="*"
+        name="service-samples"
+        class=".service_samples.ServiceSamplesView"
+        template="templates/service_samples.pt"
+        permission="senaite.core.permissions.ViewLogTab"
+    />
+
+    <browser:page
+        for="*"
+        name="service-sample-list"
+        class=".service_samples_list.ServiceSamplesListView"
+        template="templates/service_sample_list.pt"
+        permission="senaite.core.permissions.ViewLogTab"
+    />
+
+</configure>

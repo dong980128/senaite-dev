@@ -1,0 +1,1272 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="context/main_template/macros/master">
+
+<metal:content-title fill-slot="content-title">
+</metal:content-title>
+
+<metal:content-core fill-slot="content-core"
+         tal:define="info view/patient_info; samples view/samples_with_analyses">
+    <div tal:replace="structure provider:plone.abovecontenttitle"></div>
+
+    <div class="subject-page">
+        <h2 class="section-title">基础信息</h2>
+        <div class="subject-info-grid">
+            <div class="label">受试者唯一编码</div>
+            <div class="value"><span
+                    class="pill" tal:content="python: info.get('SubjectUID') or '-'">-</span>
+            </div>
+
+            <div class="label">中心名称</div>
+            <div class="value"><span
+                    class="pill" tal:content="python: info.get('Client')  or '-'">-</span>
+            </div>
+            <div class="label">癌种</div>
+            <div class="value"><span
+                    class="pill" tal:content="python: info.get('CancerType') or '-'">-</span>
+            </div>
+            <div class="label">疾病诊断</div>
+            <div class="value"><span class="pill" tal:content="python: info.get('Diagnosis') or '-'">-</span></div>
+            <div class="label">民族</div>
+            <div class="value"><span
+                    class="pill" tal:content="python: info.get('EthnicGroup') or '-'">-</span>
+            </div>
+            <div class="label">国籍</div>
+            <div class="value"><span
+                    class="pill" tal:content="python: info.get('Ethnicity') or '-'">-</span>
+            </div>
+        </div>
+
+        <h2 class="section-title">样本与实验</h2>
+        <tal:block tal:condition="python:samples">
+            <div class="global-analysis-nav">
+                <span class="analysis-nav-label">实验列表：</span>
+                <tal:block tal:repeat="sample samples">
+                    <tal:block tal:repeat="a sample/analyses">
+                        <a class="analysis-nav-item"
+                           href="#"
+                                 tal:define="aid python:'card-%s-%s' % (sample['id'], a.get('uid','') or repeat['a'].index)"
+                                 tal:attributes="data-target aid"
+                                 tal:content="python: (sample.get('id') or '') + ' - ' + (a.get('service_title') or a.get('title') or u'实验')">按钮</a>
+                    </tal:block>
+                </tal:block>
+            </div>
+        </tal:block>
+
+        <tal:block tal:condition="python:not samples">
+            <div class="empty-hint">暂无样本</div>
+        </tal:block>
+
+        <tal:block tal:condition="python:samples">
+            <tal:block tal:repeat="sample samples">
+                <div class="sample-block">
+                    <div class="sample-header">
+                        <div class="sample-title">
+                            样本： <a tal:attributes="href sample/url" tal:content="sample/id">SampleID</a>
+                            <span class="sample-created" tal:condition="sample/created">
+                                （<span tal:content="sample/created">-</span>）
+                            </span>
+                        </div>
+                        <a class="sample-open" tal:attributes="href sample/url">打开样本</a>
+                    </div>
+
+                    <tal:block tal:condition="python:not sample.get('analyses')">
+                        <div class="empty-hint">该样本下暂无实验。</div>
+                    </tal:block>
+
+                    <tal:block tal:condition="python:sample.get('analyses')">
+                        <div class="analyses-wrap">
+
+                            <tal:block tal:repeat="a sample/analyses">
+                                <div class="analysis-card"
+                                         tal:define="aid python:'card-%s-%s' % (sample['id'], a.get('uid','') or repeat['a'].index)"
+                                         tal:attributes="id aid">
+                                    <div class="card-body-wrap">
+
+                                        <!-- 基础信息 -->
+                                        <div class="analysis-top">
+                                            <div class="analysis-top-row1">
+                                                <div class="analysis-name">
+                                                    <span class="analysis-service" tal:content="a/service_title">Service</span>
+                                                    <a tal:attributes="href a/url" tal:content="a/title">Analysis</a>
+                                                </div>
+
+                                                <div class="analysis-badges">
+                                                    <label class="toggle-results">
+                                                        <input type="checkbox" class="js-toggle-results"/>
+                                                        显示结果
+                                                    </label>
+
+                                                    <label class="toggle-empty">
+                                                        <input type="checkbox" class="js-toggle-empty"/>
+                                                        显示空结果
+                                                    </label>
+
+                                                    <tal:block tal:condition="python: any(not r.get('default_visible', True) for r in a.get('interim', []))">
+                                                        <label class="toggle-all-fields">
+                                                            <input type="checkbox" class="js-toggle-all-fields"/>
+                                                            全部显示
+                                                        </label>
+                                                    </tal:block>
+                                                </div>
+                                            </div>
+
+                                            <div class="toggle-empty">
+                                                <span></span>
+                                            </div>
+
+                                            <div class="analysis-top-row2">
+                                                <div class="kv" tal:condition="a/created">
+                                                    <span class="k">创建时间：</span><span
+                                                        class="v" tal:content="a/created">-</span>
+                                                </div>
+                                                <div class="kv" tal:condition="a/service_title">
+                                                    <span class="k">服务：</span><span
+                                                        class="v" tal:content="a/service_title">-</span>
+                                                </div>
+                                                <div class="kv" tal:condition="a/title">
+                                                    <span class="k">实验：</span>
+                                                    <span class="v"><a tal:attributes="href a/url" tal:content="a/title">-</a></span>
+                                                </div>
+                                                <div class="kv" tal:condition="a/analyst">
+                                                    <span class="k">检验员：</span><span
+                                                        class="v" tal:content="a/analyst">-</span>
+                                                </div>
+                                                <div class="kv" tal:condition="a/state">
+                                                    <span class="k">状态：</span><span
+                                                        class="v" tal:content="a/state">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!--结果内容 -->
+                                        <div class="analysis-bottom">
+                                            <tal:block tal:condition="python:not a.get('interim')">
+                                                <span class="empty-hint">未填写结果</span>
+                                            </tal:block>
+
+                                            <tal:block tal:condition="python:a.get('interim')">
+                                                <div class="if-grid">
+                                                    <tal:block tal:repeat="r a/interim">
+                                                        <tal:block tal:define="
+                                                                rtype python:((r.get('result_type') or r.get('type') or '')).strip().lower();
+                                                                fv r/formatted_value;
+                                                                rv r/value;
+                                                                val python:(fv if fv not in (None, u'') else rv)
+                                                                ">
+                                                            <tal:block tal:condition="python:rtype in ('tiered_multivalue','multivalue:tiered')">
+                                                                <div class="if-item tiered"
+                                                                         tal:attributes="data-has-value python:'1' if val not in ('', None, u'—') else '0';
+                                                                        data-default-visible python:'1' if r.get('default_visible', True) else '0'">
+                                                                    <div class="tiered-block"
+                                                                             tal:attributes="data-json python:val if isinstance(val, basestring) else ''">
+                                                                        <div class="tiered-head">
+                                                                            <div class="tiered-head-left">
+                                                                                <div class="tiered-field-title"
+                                                                                         tal:content="r/title">MAGE-A4
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="tiered-head-right">
+                                                                                <select class="tiered-mode"
+                                                                                        disabled="disabled">
+                                                                                    <option>检测</option>
+                                                                                </select>
+                                                                                <span class="tiered-status badge-mini"></span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div class="tiered-body">
+                                                                            <div class="tiered-table js-tiered-table">
+                                                                                <!-- JS 渲染行 -->
+                                                                            </div>
+
+                                                                            <div class="tiered-preview">
+                                                                                <div class="tiered-preview-inner js-tiered-preview">
+                                                                                    —
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <pre class="tiered-raw js-tiered-raw"
+                                                                             style="display:none;"></pre>
+                                                                    </div>
+                                                                </div>
+                                                            </tal:block>
+
+                                                            <tal:block tal:condition="python:rtype not in ('tiered_multivalue','multivalue:tiered')">
+                                                                <div class="if-item"
+                                                                         tal:attributes="title r/keyword;
+                                                                                data-has-value python:'1' if val not in ('', None, u'—') else '0';
+                                                                        data-default-visible python:'1' if r.get('default_visible', True) else '0'">
+                                                                    <div class="if-label" tal:content="r/title">title
+                                                                    </div>
+                                                                    <div class="if-value"
+                                                                             tal:attributes="class python:'if-value' if val not in ('', None) else 'if-value empty'">
+                                                                        <span tal:content="python:val if val not in ('', None) else u'—'">value</span>
+                                                                        <span class="if-unit" tal:condition="r/unit" tal:content="r/unit">unit</span>
+                                                                    </div>
+                                                                </div>
+                                                            </tal:block>
+
+                                                        </tal:block>
+                                                    </tal:block>
+                                                </div>
+                                            </tal:block>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </tal:block>
+
+                        </div>
+                    </tal:block>
+                </div>
+            </tal:block>
+        </tal:block>
+
+    </div>
+
+    <style type="text/css">
+
+        #portal-columns,
+        #portal-column-content,
+        #content,
+        #content-core,
+        .documentContent {
+            width: 100% !important;
+            max-width: none !important;
+        }
+
+        #portal-column-content,
+        #content,
+        #content-core {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        /* Remove common centering wrappers if theme applies them */
+        .container,
+        .row,
+        .container-fluid {
+            max-width: none !important;
+        }
+
+        .subject-page {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            padding: 0 16px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin: 10px 0 16px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            margin: 18px 0 10px;
+        }
+
+        .subject-info-grid {
+            display: grid;
+            grid-template-columns: 190px 1fr 190px 1fr;
+            border: 1px solid #dbe3ea;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            width: 100%;
+        }
+
+        .subject-info-grid .label {
+            background: #f6f8fb;
+            padding: 10px 12px;
+            border-bottom: 1px solid #e6edf3;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .subject-info-grid .value {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e6edf3;
+        }
+
+        .subject-info-grid .pill {
+            display: inline-block;
+            padding: 6px 10px;
+            background: #fff;
+            min-width: 240px;
+            box-sizing: border-box;
+        }
+
+        .subject-info-grid > :nth-last-child(-n+3) {
+            border-bottom: 0;
+        }
+
+        @media (max-width: 980px) {
+            .subject-info-grid {
+                grid-template-columns: 160px 1fr;
+            }
+
+            .subject-info-grid .pill {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+
+        .empty-hint {
+            color: #777;
+            font-size: 13px;
+            padding: 8px 0;
+        }
+
+        .sample-block {
+            margin: 14px 0 20px;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .sample-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sample-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .sample-title a {
+            color: #0b74b8;
+            text-decoration: none;
+        }
+
+        .sample-title a:hover {
+            text-decoration: underline;
+        }
+
+        .sample-created {
+            font-weight: normal;
+            color: #666;
+            margin-left: 6px;
+            font-size: 12px;
+        }
+
+        .sample-open {
+            font-size: 12px;
+            text-decoration: none;
+            color: #0b74b8;
+        }
+
+        /* 实验快速导航(吸顶) */
+        .global-analysis-nav {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #f4f7fb;
+            border: 1px solid #e3eaf2;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .analysis-nav-label {
+            font-size: 18px;
+            color: #888;
+            white-space: nowrap;
+            margin-right: 4px;
+        }
+
+        .analysis-nav-item {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 14px;
+            background: #e8f0fb;
+            color: #1a6fb5;
+            font-size: 13px;
+            text-decoration: none;
+            border: 1px solid #ccddf5;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .analysis-nav-item:hover {
+            background: #1a6fb5;
+            color: #fff;
+            border-color: #1a6fb5;
+        }
+
+        .analysis-nav-item.active {
+            background: #1a6fb5;
+            color: #fff;
+            border-color: #1a6fb5;
+        }
+
+        /* card-body-wrap 始终可见 */
+        .card-body-wrap {
+            display: block;
+        }
+
+        /* 卡片基础过渡 */
+        .analysis-card {
+            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.5s ease,
+            opacity 0.4s ease;
+            position: relative;
+        }
+
+        .analysis-card.card-active {
+            transform: scale(1.018);
+            box-shadow: 0 8px 40px rgba(26, 111, 181, 0.22), 0 0 0 2px #1a6fb5;
+            z-index: 10;
+        }
+
+        .has-active .analysis-card:not(.card-active) {
+            transform: scale(0.985);
+            opacity: 0.72;
+        }
+
+        .analyses-wrap {
+            padding: 10px 12px 14px;
+        }
+
+        .analysis-card {
+            border: 1px solid #e9e9e9;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .analysis-top {
+            background: #fcfcfc;
+            border-bottom: 1px solid #eee;
+        }
+
+        .analysis-top-row1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+        }
+
+        .analysis-name {
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+        }
+
+        .analysis-service {
+            font-weight: 700;
+            color: #222;
+        }
+
+        .analysis-name a {
+            color: #0b74b8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .analysis-name a:hover {
+            text-decoration: underline;
+        }
+
+        .analysis-badges {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 12px;
+            color: #333;
+            background: rgba(0, 0, 0, 0.06);
+            padding: 2px 10px;
+            border-radius: 999px;
+            user-select: none;
+        }
+
+        .badge-mini {
+            font-size: 12px;
+            color: #333;
+            background: rgba(0, 0, 0, 0.12);
+            padding: 2px 10px;
+            border-radius: 999px;
+        }
+
+        .analysis-top-row2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 6px 12px;
+            padding: 0 12px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .kv .k {
+            color: #666;
+            margin-right: 4px;
+        }
+
+        .kv .v {
+            color: #111;
+        }
+
+        .analysis-bottom {
+            padding: 10px 12px 14px;
+            background: #fff;
+        }
+
+        .if-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px 12px;
+            align-items: start;
+        }
+
+        .if-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .if-label {
+            font-size: 12px;
+            color: #222;
+            font-weight: 600;
+            line-height: 14px;
+            word-break: break-word;
+        }
+
+        .if-value {
+            font-size: 12px;
+            color: #111;
+            background: #f7f7f7;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 8px;
+            min-height: 26px;
+            line-height: 16px;
+            word-break: break-word;
+        }
+
+        .if-value.empty {
+            color: #999;
+        }
+
+        .if-unit {
+            margin-left: 6px;
+            color: #666;
+            font-size: 11px;
+        }
+
+        @media (max-width: 520px) {
+            .analysis-top-row2 {
+                grid-template-columns: 1fr;
+            }
+
+            .if-grid {
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            }
+        }
+
+        .toggle-results, .toggle-empty {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 999px;
+            user-select: none;
+        }
+
+        .toggle-results {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .toggle-empty {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .toggle-results input, .toggle-empty input, .toggle-all-fields input {
+            margin: 0;
+        }
+
+        .toggle-all-fields {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #1a6fb5;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: rgba(26, 111, 181, 0.10);
+            border: 1px solid rgba(26, 111, 181, 0.25);
+            user-select: none;
+            cursor: pointer;
+        }
+
+
+        .if-item.tiered {
+            grid-column: 1 / -1;
+        }
+
+        .tiered-block {
+            background: #cfeaff;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .tiered-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .tiered-field-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #0b2239;
+        }
+
+        .tiered-head-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tiered-mode {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .tiered-body {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+
+        @media (max-width: 860px) {
+            .tiered-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tiered-table {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.10);
+        }
+
+        .tier-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+            font-size: 13px;
+            color: #0b2239;
+        }
+
+        .tier-row:last-child {
+            border-bottom: none;
+        }
+
+        .tier-k {
+            font-weight: 700;
+        }
+
+        .tier-v {
+            font-weight: 600;
+        }
+
+        .tiered-preview {
+            min-height: 160px;
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.10);
+            padding: 10px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        .tiered-preview-inner {
+            color: #3b3b3b;
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        .tiered-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+        }
+
+        .tiered-preview-inner {
+            width: 100%;
+        }
+
+        .tiered-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 18px;
+            align-items: stretch;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tiered-grid-item {
+            flex: 1 1 280px;
+            min-width: 180px;
+            max-width: 320px;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .tiered-grid-img {
+            width: 100%;
+            height: clamp(160px, 16vw, 260px);
+            object-fit: contain;
+            display: block;
+            border-radius: 8px;
+            cursor: zoom-in;
+        }
+
+        .tiered-grid-img:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .tiered-raw {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+            overflow: auto;
+        }
+
+        .tmv-preview-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .tmv-preview-zoom {
+            max-width: 92vw;
+            max-height: 90vh;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-drag: none;
+            transform: translate(0px, 0px) scale(1);
+            will-change: transform;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .tmv-preview-close {
+            position: absolute;
+            right: 16px;
+            top: 12px;
+            font-size: 30px;
+            line-height: 30px;
+            color: #fff;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .tmv-preview-hint {
+            position: absolute;
+            left: 16px;
+            bottom: 12px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 10px;
+            border-radius: 8px;
+            z-index: 2;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+        (function () {
+            var __lb = {
+                mask: null,
+                img: null,
+                closeBtn: null,
+                hint: null,
+                zoomScale: 1,
+                zoomTx: 0,
+                zoomTy: 0
+            };
+
+            function _applyZoomTransform() {
+                if (!__lb.img) return;
+                var s = (__lb.zoomScale || 1);
+                var tx = (__lb.zoomTx || 0);
+                var ty = (__lb.zoomTy || 0);
+                __lb.img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + s + ')';
+            }
+
+            function _closeLightbox(ev) {
+                if (ev && ev.preventDefault) ev.preventDefault();
+                if (!__lb.mask) return;
+                __lb.mask.style.display = 'none';
+                __lb.zoomScale = 1;
+                __lb.zoomTx = 0;
+                __lb.zoomTy = 0;
+                _applyZoomTransform();
+            }
+
+            function _ensureLightbox() {
+                if (__lb.mask) return;
+
+                var mask = document.createElement('div');
+                mask.className = 'tmv-preview-mask';
+                mask.style.display = 'none';
+
+                var img = document.createElement('img');
+                img.className = 'tmv-preview-zoom';
+                img.setAttribute('draggable', 'false');
+
+                var closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'tmv-preview-close';
+                closeBtn.textContent = '×';
+
+                var hint = document.createElement('div');
+                hint.className = 'tmv-preview-hint';
+                hint.textContent = '滚轮缩放 / 拖拽平移 / 双击还原 / ESC 关闭';
+
+                mask.appendChild(closeBtn);
+                mask.appendChild(hint);
+                mask.appendChild(img);
+
+                document.body.appendChild(mask);
+
+                __lb.mask = mask;
+                __lb.img = img;
+                __lb.closeBtn = closeBtn;
+                __lb.hint = hint;
+
+                mask.addEventListener('contextmenu', function (e) {
+                    e.preventDefault();
+                });
+                img.addEventListener('contextmenu', function (e) {
+                    e.preventDefault();
+                });
+
+                img.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                mask.addEventListener('click', function (e) {
+                    if (e.target === mask) _closeLightbox(e);
+                });
+
+                closeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    _closeLightbox(e);
+                });
+                hint.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener('keyup', function (e) {
+                    if (e.key === 'Escape') _closeLightbox(e);
+                });
+
+                var wheelHandler = function (e) {
+                    if (e && e.preventDefault) e.preventDefault();
+                    var dy = e.deltaY || 0;
+                    var factor = (dy > 0) ? 0.9 : 1.1;
+                    __lb.zoomScale = (__lb.zoomScale || 1) * factor;
+                    __lb.zoomScale = Math.max(0.2, Math.min(6, __lb.zoomScale));
+                    _applyZoomTransform();
+                };
+
+                try {
+                    mask.addEventListener('wheel', wheelHandler, {passive: false});
+                } catch (err) {
+                    mask.addEventListener('wheel', wheelHandler);
+                }
+
+                img.addEventListener('dragstart', function (e) {
+                    e.preventDefault();
+                });
+
+                var dragging = false;
+                var sx = 0, sy = 0;
+                var stx = 0, sty = 0;
+
+                var move = function (e) {
+                    if (!dragging) return;
+                    __lb.zoomTx = stx + (e.clientX - sx);
+                    __lb.zoomTy = sty + (e.clientY - sy);
+                    _applyZoomTransform();
+                };
+
+                var up = function (e) {
+                    if (!dragging) return;
+                    dragging = false;
+                    img.style.cursor = 'grab';
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                };
+
+                img.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+                    if (e && e.preventDefault) e.preventDefault();
+                    dragging = true;
+                    sx = e.clientX;
+                    sy = e.clientY;
+                    stx = __lb.zoomTx || 0;
+                    sty = __lb.zoomTy || 0;
+                    img.style.cursor = 'grabbing';
+                    document.addEventListener('mousemove', move);
+                    document.addEventListener('mouseup', up);
+                });
+
+                // 双击还原
+                img.addEventListener('dblclick', function (e) {
+                    if (e && e.preventDefault) e.preventDefault();
+                    __lb.zoomScale = 1;
+                    __lb.zoomTx = 0;
+                    __lb.zoomTy = 0;
+                    _applyZoomTransform();
+                });
+            }
+
+            function openImageModal(src) {
+                if (!src) return;
+                _ensureLightbox();
+
+                __lb.zoomScale = 1;
+                __lb.zoomTx = 0;
+                __lb.zoomTy = 0;
+                _applyZoomTransform();
+
+                __lb.img.removeAttribute('src');
+                __lb.img.onerror = function () {
+                    __lb.mask.style.display = 'none';
+                };
+                __lb.img.src = src;
+
+                __lb.img.style.cursor = 'grab';
+                __lb.mask.style.display = 'flex';
+            }
+
+            function renderTieredBlocks() {
+                var blocks = document.querySelectorAll('.tiered-block');
+                for (var i = 0; i < blocks.length; i++) {
+                    (function (block) {
+                        var raw = block.getAttribute('data-json') || '';
+                        var table = block.querySelector('.js-tiered-table');
+                        var preview = block.querySelector('.js-tiered-preview');
+                        var rawBox = block.querySelector('.js-tiered-raw');
+                        var statusBadge = block.querySelector('.tiered-status');
+
+                        if (!table) return;
+
+                        table.innerHTML = '';
+
+                        if (!raw) {
+                            if (statusBadge) statusBadge.style.display = 'none';
+                            if (preview) preview.textContent = '—';
+                            return;
+                        }
+
+                        var data = null;
+                        try {
+                            data = JSON.parse(raw);
+                        } catch (e) {
+                            if (rawBox) {
+                                rawBox.style.display = 'block';
+                                rawBox.textContent = raw;
+                            }
+                            if (statusBadge) statusBadge.style.display = 'none';
+                            if (preview) preview.textContent = '—';
+                            return;
+                        }
+
+                        // status状态
+                        if (statusBadge) {
+                            var st = (data && data.status) ? String(data.status) : '';
+                            if (st) {
+                                statusBadge.textContent = st;
+                                statusBadge.style.display = '';
+                            } else {
+                                statusBadge.style.display = 'none';
+                            }
+                        }
+
+                        var labels = ['%1+', '%2+', '%3+', '%0', 'H-score', '总和'];
+                        var vals = (data && data.values) ? data.values : [];
+                        if (!vals || typeof vals.length === 'undefined') vals = [];
+
+                        var out = [];
+                        for (var k = 0; k < labels.length; k++) {
+                            out.push(vals[k] !== undefined && vals[k] !== null && vals[k] !== '' ? vals[k] : '—');
+                        }
+
+                        for (var r = 0; r < labels.length; r++) {
+                            var row = document.createElement('div');
+                            row.className = 'tier-row';
+
+                            var left = document.createElement('div');
+                            left.className = 'tier-k';
+                            let lbl = labels[r];
+                            if (lbl && lbl.indexOf('&#') !== -1) {
+                                var t = document.createElement('textarea');
+                                t.innerHTML = lbl;
+                                lbl = t.value;
+                            }
+
+                            left.textContent = lbl;
+
+                            var right = document.createElement('div');
+                            right.className = 'tier-v';
+                            right.textContent = String(out[r]);
+
+                            row.appendChild(left);
+                            row.appendChild(right);
+                            table.appendChild(row);
+                        }
+
+                        if (preview) {
+                            var imgs = normalizeImages((data && data.images) ? data.images : []);
+                            renderGallery(preview, imgs, openImageModal);
+                        }
+                    })(blocks[i]);
+                }
+            }
+
+            function normalizeImages(images) {
+                var out = [];
+                if (!images) return out;
+
+                // images: ["url1","url2"] 或 [{"url":"..."}, {"src":"..."}]
+                for (var i = 0; i < images.length; i++) {
+                    var it = images[i];
+                    if (!it) continue;
+                    if (typeof it === 'string') {
+                        out.push(it);
+                        continue;
+                    }
+                    if (typeof it === 'object') {
+                        var u = it.url || it.src || it.href || it.download_url || it.image || it.path;
+                        if (u) out.push(String(u));
+                    }
+                }
+                return out;
+            }
+
+            function renderGallery(preview, urls, openModal) {
+                preview.innerHTML = '';
+
+                if (!urls || !urls.length) {
+                    preview.textContent = '—';
+                    return;
+                }
+
+                // Figure-1 style: show all images in a responsive grid (no "main + thumbs")
+                var grid = document.createElement('div');
+                grid.className = 'tiered-grid';
+
+                for (var i = 0; i < urls.length; i++) {
+                    (function (idx) {
+                        var item = document.createElement('div');
+                        item.className = 'tiered-grid-item';
+
+                        var img = document.createElement('img');
+                        img.className = 'tiered-grid-img';
+                        img.src = urls[idx];
+                        img.alt = 'image ' + (idx + 1);
+
+                        img.addEventListener('click', function () {
+                            openModal(urls[idx]);
+                        });
+
+                        item.appendChild(img);
+                        grid.appendChild(item);
+                    })(i);
+                }
+
+                preview.appendChild(grid);
+            }
+
+            function applyForCard(card, showEmpty, showAllFields) {
+                var items = card.querySelectorAll('.if-item');
+                for (var i = 0; i < items.length; i++) {
+                    var has = items[i].getAttribute('data-has-value') === '1';
+                    var defVisible = items[i].getAttribute('data-default-visible') !== '0';
+                    var eligible = showAllFields || defVisible;
+                    items[i].style.display = (eligible && (showEmpty || has)) ? '' : 'none';
+                }
+            }
+
+            function applyResults(card, showResults) {
+                var bottom = card.querySelector('.analysis-bottom');
+                if (!bottom) return;
+                bottom.style.display = showResults ? '' : 'none';
+            }
+
+            function hasAnyValue(card) {
+                return !!card.querySelector('.if-item[data-has-value="1"]');
+            }
+
+            function init() {
+                renderTieredBlocks();
+
+                var cards = document.querySelectorAll('.analysis-card');
+                for (var c = 0; c < cards.length; c++) {
+                    (function (card) {
+                        var cbResults = card.querySelector('.js-toggle-results');
+                        var cbEmpty = card.querySelector('.js-toggle-empty');
+                        var cbAllFields = card.querySelector('.js-toggle-all-fields');
+                        if (!cbResults || !cbEmpty) return;
+
+                        var any = hasAnyValue(card);
+                        cbResults.checked = any;
+                        cbEmpty.checked = false;
+                        if (cbAllFields) cbAllFields.checked = false;
+
+                        applyResults(card, cbResults.checked);
+                        applyForCard(card, cbEmpty.checked, false);
+
+                        cbResults.addEventListener('change', function () {
+                            applyResults(card, cbResults.checked);
+                            if (cbResults.checked && !any) {
+                                cbEmpty.checked = true;
+                            }
+                            applyForCard(card, cbEmpty.checked, !!(cbAllFields && cbAllFields.checked));
+                        });
+
+                        cbEmpty.addEventListener('change', function () {
+                            applyForCard(card, cbEmpty.checked, !!(cbAllFields && cbAllFields.checked));
+                        });
+
+                        if (cbAllFields) {
+                            cbAllFields.addEventListener('change', function () {
+                                applyForCard(card, cbEmpty.checked, cbAllFields.checked);
+                            });
+                        }
+
+                    })(cards[c]);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            function initAnalysisNav() {
+                var btns = document.querySelectorAll('.global-analysis-nav .analysis-nav-item');
+
+                function clearActive() {
+                    document.querySelectorAll('.analysis-card').forEach(function (c) {
+                        c.classList.remove('card-active');
+                        c.style.transition = '';
+                        c.style.transform = '';
+                    });
+                    btns.forEach(function (b) {
+                        b.classList.remove('active');
+                    });
+                    document.querySelectorAll('.analyses-wrap').forEach(function (w) {
+                        w.classList.remove('has-active');
+                    });
+                }
+
+                btns.forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        var targetId = btn.getAttribute('data-target');
+                        if (!targetId) return;
+
+                        var card = document.getElementById(targetId);
+                        if (!card) return;
+
+                        var alreadyActive = card.classList.contains('card-active');
+                        clearActive();
+                        if (alreadyActive) return;
+
+                        var wrap = card.closest('.analyses-wrap');
+                        if (!wrap) return;
+
+                        var sampleBlock = card.closest('.sample-block');
+                        var samplesContainer = sampleBlock && sampleBlock.parentNode;
+                        var cardFromRect = card.getBoundingClientRect();
+                        var blockFromRect = sampleBlock ? sampleBlock.getBoundingClientRect() : null;
+                        var firstCard = wrap.querySelector('.analysis-card');
+                        if (firstCard && firstCard !== card) {
+                            wrap.insertBefore(card, firstCard);
+                        }
+                        if (samplesContainer && sampleBlock) {
+                            var firstBlock = samplesContainer.querySelector('.sample-block');
+                            if (firstBlock && firstBlock !== sampleBlock) {
+                                samplesContainer.insertBefore(sampleBlock, firstBlock);
+                            }
+                        }
+
+                        var cardToRect = card.getBoundingClientRect();
+                        var dy = cardFromRect.top - cardToRect.top;
+                        card.style.transition = 'none';
+                        card.style.transform = 'translateY(' + dy + 'px) scale(1)';
+                        card.getBoundingClientRect();
+                        card.style.transition = 'transform 0.55s cubic-bezier(0.22,1,0.36,1), box-shadow 0.5s ease, opacity 0.4s ease';
+                        card.style.transform = '';
+                        btn.classList.add('active');
+                        card.classList.add('card-active');
+                        wrap.classList.add('has-active');
+                        setTimeout(function () {
+                            var target = sampleBlock || wrap;
+                            target.scrollIntoView({behavior: 'smooth', block: 'start'});
+                        }, 80);
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAnalysisNav);
+            } else {
+                initAnalysisNav();
+            }
+
+        })();
+    </script>
+
+</metal:content-core>
+</html>

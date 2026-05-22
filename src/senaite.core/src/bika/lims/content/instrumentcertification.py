@@ -1,0 +1,305 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of SENAITE.CORE.
+#
+# SENAITE.CORE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, version 2.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright 2018-2025 by it's authors.
+# Some rights reserved, see README and LICENSE.
+
+import math
+
+from AccessControl import ClassSecurityInfo
+from bika.lims import bikaMessageFactory as _
+from bika.lims import logger
+from bika.lims.browser.fields import UIDReferenceField
+from bika.lims.browser.widgets import ComboBoxWidget
+from bika.lims.config import PROJECTNAME
+from bika.lims.content.bikaschema import BikaSchema
+from bika.lims.interfaces import IInstrumentCertification
+from DateTime import DateTime
+from plone.app.blob.field import FileField as BlobFileField
+from Products.Archetypes.atapi import BaseFolder
+from Products.Archetypes.atapi import BooleanField
+from Products.Archetypes.atapi import BooleanWidget
+from Products.Archetypes.atapi import ComputedField
+from Products.Archetypes.atapi import ComputedWidget
+from Products.Archetypes.atapi import DateTimeField
+from Products.Archetypes.atapi import DisplayList
+from Products.Archetypes.atapi import FileWidget
+from Products.Archetypes.atapi import Schema
+from Products.Archetypes.atapi import StringField
+from Products.Archetypes.atapi import StringWidget
+from Products.Archetypes.atapi import TextAreaWidget
+from Products.Archetypes.atapi import TextField
+from Products.Archetypes.atapi import registerType
+from senaite.core.browser.widgets import DateTimeWidget
+from senaite.core.browser.widgets.referencewidget import ReferenceWidget
+from senaite.core.catalog import CONTACT_CATALOG
+from zope.interface import implements
+
+schema = BikaSchema.copy() + Schema((
+
+    StringField(
+        'TaskID',
+        widget=StringWidget(
+            label=_("Task ID"),
+            description=_("The instrument's ID in the lab's asset register"),
+        )
+    ),
+
+    UIDReferenceField(
+        'Instrument',
+        allowed_types=('Instrument',),
+        widget=StringWidget(
+            visible=False,
+        )
+    ),
+
+    ComputedField(
+        'InstrumentUID',
+        expression='context.getInstrument() and context.getInstrument().UID() or None',
+        widget=ComputedWidget(
+            visible=False,
+        ),
+    ),
+
+    # Set the Certificate as Internal
+    # When selected, the 'Agency' field is hidden
+    BooleanField(
+        'Internal',
+        default=False,
+        widget=BooleanWidget(
+            label=_("Internal Certificate"),
+            description=_("Select if is an in-house calibration certificate")
+        )
+    ),
+
+    StringField(
+        'Agency',
+        widget=StringWidget(
+            label=_("Agency"),
+            description=_("Organization responsible of granting the calibration certificate")
+        ),
+    ),
+
+    DateTimeField(
+        'Date',
+        widget=DateTimeWidget(
+            label=_("Date granted"),
+            description=_("Date when the calibration certificate was granted"),
+            show_time=True,
+        ),
+    ),
+
+    StringField(
+        'ExpirationInterval',
+        vocabulary="getInterval",
+        widget=ComboBoxWidget(
+            label=_("Interval"),
+            description=_("The interval is calculated from the 'From' field "
+                          "and defines when the certificate expires in days. "
+                          "Setting this inverval overwrites the 'To' field "
+                          "on save."),
+            default="",
+            # configures the HTML input attributes for the additional field
+            field_config={"type": "number", "step": "1", "max": "99999"},
+            field_regex=r"\d+"
+        )
+    ),
+
+    DateTimeField(
+        'ValidFrom',
+        required=1,
+        widget=DateTimeWidget(
+            label=_("Valid from"),
+            description=_("Date when the certificate is valid"),
+            show_time=True,
+        ),
+    ),
+
+    DateTimeField(
+        'ValidTo',
+        required=1,
+        widget=DateTimeWidget(
+            label=_("Valid to"),
+            description=_("Date until the certificate is valid"),
+            show_time=True,
+        ),
+    ),
+
+    UIDReferenceField(
+        "Preparator",
+        allowed_types=("LabContact", "SupplierContact"),
+        widget=ReferenceWidget(
+            label=_(
+                "label_instrumentcertification_preparator",
+                default="Prepared by"),
+            description=_(
+                "description_instrumentcertification_preparator",
+                default="The person at the supplier who prepared the certificat"),
+            catalog=CONTACT_CATALOG,
+            query={
+                "is_active": True,
+                "sort_on": "sortable_title",
+                "sort_order": "ascending"
+            },
+            columns=[
+                {"name": "getFullname", "label": _("Name")},
+                {"name": "getEmailAddress", "label": _("Email")},
+                {"name": "getJobTitle", "label": _("Job Title")},
+            ],
+        ),
+    ),
+
+    UIDReferenceField(
+        "Validator",
+        allowed_types=("LabContact", "SupplierContact"),
+        widget=ReferenceWidget(
+            label=_(
+                "label_instrumentcertification_validator",
+                default="Approved by"),
+            description=_(
+                "description_instrumentcertification_validator",
+                default="The person at the supplier who approved the "
+                        "certificate"),
+            catalog=CONTACT_CATALOG,
+            query={
+                "is_active": True,
+                "sort_on": "sortable_title",
+                "sort_order": "ascending"
+            },
+            columns=[
+                {"name": "getFullname", "label": _("Name")},
+                {"name": "getEmailAddress", "label": _("Email")},
+                {"name": "getJobTitle", "label": _("Job Title")},
+            ],
+        ),
+    ),
+
+    BlobFileField(
+        'Document',
+        widget=FileWidget(
+            label=_("Report upload"),
+            description=_("Load the certificate document here"),
+        )
+    ),
+
+    TextField(
+        "Remarks",
+        allowable_content_types=("text/plain",),
+        widget=TextAreaWidget(
+            label=_("Remarks"),
+        )
+    ),
+
+))
+
+schema['title'].widget.label = _("Certificate Code")
+
+
+class InstrumentCertification(BaseFolder):
+    """Issued certification from an instrument calibration
+    """
+    implements(IInstrumentCertification)
+    security = ClassSecurityInfo()
+    schema = schema
+    _at_rename_after_creation = True
+
+    def _renameAfterCreation(self, check_auto_id=False):
+        from senaite.core.idserver import renameAfterCreation
+        renameAfterCreation(self)
+
+    @security.protected("Modify portal content")
+    def setValidTo(self, value):
+        """Custom setter method to calculate a `ValidTo` date based on
+        the `ValidFrom` and `ExpirationInterval` field values.
+        """
+
+        valid_from = self.getValidFrom()
+        valid_to = DateTime(value)
+        interval = self.getExpirationInterval()
+
+        if valid_from and interval:
+            valid_to = valid_from + int(interval)
+            # convert back to date string w/o timezone
+            valid_to = valid_to.strftime("%Y-%m-%dT%H:%M")
+            self.getField("ValidTo").set(self, valid_to)
+            logger.debug("Set ValidTo Date to: %r" % valid_to)
+        else:
+            # just set the value
+            self.getField("ValidTo").set(self, value)
+
+    def getInterval(self):
+        """Vocabulary of date intervals to calculate the "To" field date based
+        from the "From" field date.
+        """
+        items = (
+            ("", _(u"Not set")),
+            ("1", _(u"daily")),
+            ("7", _(u"weekly")),
+            ("30", _(u"monthly")),
+            ("90", _(u"quarterly")),
+            ("180", _(u"biannually")),
+            ("365", _(u"yearly")),
+        )
+        return DisplayList(items)
+
+    def isValid(self):
+        """Returns if the current certificate is in a valid date range
+        """
+
+        today = DateTime()
+        valid_from = self.getValidFrom()
+        valid_to = self.getValidTo()
+
+        return valid_from <= today <= valid_to
+
+    def getDaysToExpire(self):
+        """Returns the days until this certificate expires
+
+        :returns: Days until the certificate expires
+        :rtype: int
+        """
+
+        delta = 0
+        today = DateTime()
+        valid_from = self.getValidFrom() or today
+        valid_to = self.getValidTo()
+
+        # one of the fields is not set, return 0 days
+        if not valid_from or not valid_to:
+            return 0
+        # valid_from comes after valid_to?
+        if valid_from > valid_to:
+            return 0
+        # calculate the time between today and valid_to, even if valid_from
+        # is in the future.
+        else:
+            delta = valid_to - today
+
+        return int(math.ceil(delta))
+
+    def getWeeksAndDaysToExpire(self):
+        """Returns the number weeks and days until this certificate expires
+
+        :returns: Weeks and days until the certificate expires
+        :rtype: tuple(weeks, days)
+        """
+
+        days = self.getDaysToExpire()
+        return divmod(days, 7)
+
+
+registerType(InstrumentCertification, PROJECTNAME)

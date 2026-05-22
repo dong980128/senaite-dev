@@ -1,0 +1,736 @@
+<metal:page use-macro="context/main_template/macros/master"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core">
+
+    <metal:module metal:define-macro="module">
+        <tal:hdr tal:condition="python:request.RESPONSE.setHeader('Content-Type','text/html;charset=utf-8')" />
+
+        <div class="page">
+            <div class="container">
+                <!-- ========== 搜索表单卡片 ========== -->
+                <div class="card">
+                    <h2>HLA Search（Haplotype）</h2>
+
+                    <!-- 位点输入：A/B/C/DRB1/DQB1/DPB1 两行 -->
+                    <div class="form-grid" id="hlagrid"></div>
+
+                    <div class="form-row">
+                        <div class="lbl">HLA</div>
+                        <input id="inp-hla-combo" class="ipt"
+                               placeholder="A*xx:xx;A*xx:xx;B*..;C*..;DRB1*..;DQB1*..;DPB1*.."/>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="lbl">SampleId</div>
+                        <input id="inp-sample" class="ipt" placeholder="S001 或多值以英文逗号分隔"/>
+                    </div>
+
+                    <div class="form-row" style="justify-content:flex-end;">
+                        <span class="chip pb">PBMC</span>
+                        <span class="chip bc">BCPBMC</span>
+                        <button id="btn-search" class="btn">Search</button>
+                    </div>
+
+                    <div id="err" class="err"></div>
+                    <div class="muted">提示：HLA 与 SampleId 二选一；填写 SampleId 时将自动清空 HLA 组合，反之亦然。</div>
+                </div>
+
+                <!-- ========== 结果卡片 ========== -->
+                <div class="card" id="result-card" style="display:none;">
+                    <h2>查询结果</h2>
+                    <div id="group-tabs" class="group-tabs"></div>
+                    <div id="collapse" class="result-collapse"></div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                // ====== DOM ======
+                var elGrid = document.getElementById('hlagrid');
+                var elHlaCombo = document.getElementById('inp-hla-combo');
+                var elSample = document.getElementById('inp-sample');
+                var elBtn = document.getElementById('btn-search');
+                var elErr = document.getElementById('err');
+                var elTabs = document.getElementById('group-tabs');
+                var elColl = document.getElementById('collapse');
+                var elResult = document.getElementById('result-card');
+
+                // ====== 状态 ======
+                var updatingFromFields = false;
+                var updatingFromCombo = false;
+                var firstData = [];        // 接口返回的 SampleData
+                var geneFreq = {};         // 接口返回的 GeneFrequence
+                var activeGroup = '';      // 当前激活分组
+                var openMap = {};          // 每个分组已展开的 item 索引集合
+
+                var LOCI = ['A', 'B', 'C', 'DRB1', 'DQB1', 'DPB1'];
+
+                // ====== 构建位点输入（两行） ======
+                function buildLocusGrid() {
+                    var html = '';
+                    LOCI.forEach(function (label) {
+                        html += [
+                            '<div class="locus-block" data-locus="', label, '">',
+                            '<span class="locus-label">', label, '</span>',
+                            '<input class="ipt locus-ipt" data-slot="1" placeholder="', label, '1" />',
+                            '<input class="ipt locus-ipt" data-slot="2" placeholder="', label, '2" />',
+                            '</div>'
+                        ].join('');
+                    });
+                    elGrid.innerHTML = html;
+                }
+
+                // ====== 取/设 位点值 ======
+                function getFieldPairs() {
+                    var pairs = {};
+                    LOCI.forEach(function (label) {
+                        var b = elGrid.querySelector('[data-locus="' + label + '"]');
+                        pairs[label + '1'] = (b.querySelector('[data-slot="1"]').value || '').trim();
+                        pairs[label + '2'] = (b.querySelector('[data-slot="2"]').value || '').trim();
+                    });
+                    return pairs;
+                }
+
+                function setFieldPairsFromList(list) {
+                    // 清空
+                    LOCI.forEach(function (label) {
+                        var b = elGrid.querySelector('[data-locus="' + label + '"]');
+                        b.querySelector('[data-slot="1"]').value = '';
+                        b.querySelector('[data-slot="2"]').value = '';
+                    });
+                    // 分配
+                    (list || []).forEach(function (pair) {
+                        var parts = (pair || '').split('*');
+                        var key = (parts[0] || '').trim();
+                        if (!key) return;
+                        var full = pair.trim();
+                        var box = elGrid.querySelector('[data-locus="' + key + '"]');
+                        if (!box) return;
+                        var s1 = box.querySelector('[data-slot="1"]');
+                        var s2 = box.querySelector('[data-slot="2"]');
+                        if (!s1.value) s1.value = full;
+                        else if (!s2.value) s2.value = full;
+                    });
+                }
+
+                // ====== 双向联动 ======
+                function updateComboFromFields() {
+                    if (updatingFromCombo) return;
+                    updatingFromFields = true;
+                    var p = getFieldPairs();
+                    var arr = [];
+                    LOCI.forEach(function (label) {
+                        if (p[label + '1']) arr.push(p[label + '1']);
+                        if (p[label + '2']) arr.push(p[label + '2']);
+                    });
+                    elHlaCombo.value = arr.join(';');
+                    // 输入 HLA 时，清空 sample
+                    if (arr.length) {
+                        elSample.value = '';
+                    }
+                    updatingFromFields = false;
+                }
+
+                function updateFieldsFromCombo() {
+                    if (updatingFromFields) return;
+                    updatingFromCombo = true;
+                    var list = (elHlaCombo.value || '').split(';').map(function (x) {
+                        return x.trim();
+                    }).filter(Boolean);
+                    setFieldPairsFromList(list);
+                    // 输入 HLA 时，清空 sample
+                    if (list.length) {
+                        elSample.value = '';
+                    }
+                    updatingFromCombo = false;
+                }
+
+                function onSampleInput() {
+                    if ((elSample.value || '').trim()) {
+                        elHlaCombo.value = '';
+                        // 清空位点
+                        setFieldPairsFromList([]);
+                    }
+                }
+
+                // 绑定输入事件
+                function bindInputs() {
+                    elGrid.addEventListener('input', function (e) {
+                        if (e.target && e.target.classList.contains('locus-ipt')) updateComboFromFields();
+                    });
+                    elHlaCombo.addEventListener('input', updateFieldsFromCombo);
+                    elSample.addEventListener('input', onSampleInput);
+
+                    // 回车执行搜索（便捷）
+                    [elHlaCombo, elSample].forEach(function (node) {
+                        node.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                doSearch();
+                            }
+                        });
+                    });
+                }
+
+                // ====== 工具 ======
+                function showErr(msg) {
+                    elErr.style.display = 'block';
+                    elErr.textContent = msg;
+                }
+
+                function hideErr() {
+                    elErr.style.display = 'none';
+                    elErr.textContent = '';
+                }
+
+                function splitHLA(s) {
+                    return (s || '').split(';').map(function (x) {
+                        return x.trim();
+                    }).filter(function (x) {
+                        return x && x !== '-';
+                    });
+                }
+
+                function percentWidth(v) {
+                    if (v == null || v === '') return '0%';
+                    var s = ('' + v).trim();
+                    if (s.endsWith('%')) return s;
+                    var f = parseFloat(s);
+                    if (isNaN(f) || f < 0) f = 0;
+                    if (f > 100) f = 100;
+                    return f.toFixed(2) + '%';
+                }
+
+                // ====== 渲染结果 ======
+                function groupByClinical(rows) {
+                    var out = {};
+                    rows.forEach(function (item) {
+                        var source = item.source || 'Uncategorized';
+                        if (source === 'G5') source = 'PBMC';
+                        if (!out[source]) out[source] = [];
+                        var arr = splitHLA(item.hla);
+                        item._hla_array = arr;
+                        out[source].push(item);
+                    });
+                    return out;
+                }
+
+                function renderTabs(groups) {
+                    var names = Object.keys(groups);
+                    if (!names.length) {
+                        elTabs.innerHTML = '';
+                        return;
+                    }
+                    if (!activeGroup || names.indexOf(activeGroup) === -1) activeGroup = names[0];
+                    var html = names.map(function (name) {
+                        var cls = 'group-tab' + (name === activeGroup ? ' active' : '');
+                        return '<div class="' + cls + '" data-name="' + name + '">' + name + '</div>';
+                    }).join('');
+                    elTabs.innerHTML = html;
+                }
+
+                function renderCollapse(groups) {
+                    var rows = groups[activeGroup] || [];
+                    if (!openMap[activeGroup]) openMap[activeGroup] = {'0': true}; // 默认展开第一条
+
+                    var html = rows.map(function (item, idx) {
+                        var opened = !!openMap[activeGroup][idx];
+                        var cls = 'item' + (opened ? ' open' : '');
+                        var title = (idx + 1) + '. ' + (item.ksh_id || item.kshId || '') + ' ' + (item.tumor_type || item.tumorType || '');
+                        var body = renderItemBody(item);
+                        return [
+                            '<div class="', cls, '" data-idx="', idx, '">',
+                            '<div class="item-hd"><span class="idx">', title, '</span></div>',
+                            '<div class="item-bd">', body, '</div>',
+                            '</div>'
+                        ].join('');
+                    }).join('');
+                    elColl.innerHTML = html;
+                }
+
+                function renderItemBody(item) {
+                    var single = {'A': [], 'B': [], 'C': []};
+                    var multi = {}; // DRB1/DQB1/DPB1...
+                    (item._hla_array || []).forEach(function (a) {
+                        var pre = a.split('*')[0] || '';
+                        if (pre.length === 1 && single[pre]) single[pre].push(a);
+                        else {
+                            if (!multi[pre]) multi[pre] = [];
+                            multi[pre].push(a);
+                        }
+                    });
+
+                    function cellHTML(allele) {
+                        var m = geneFreq[allele] || {};
+                        var pb = percentWidth(m.PBMC);
+                        var bc = percentWidth(m.BCPBMC);
+                        return [
+                            '<div class="allele-cell">',
+                            '<div class="allele-name"><span class="ico">★</span><span>', allele, '</span></div>',
+                            '<div class="bars">',
+                            '<div class="bar pbmc"><div class="fill" style="width:', pb, '"></div><span class="txt">', pb, '</span></div>',
+                            '<div class="bar bcpbmc"><div class="fill" style="width:', bc, '"></div><span class="txt">', bc, '</span></div>',
+                            '</div>',
+                            '</div>'
+                        ].join('');
+                    }
+
+                    var singleCols = ['A', 'B', 'C'].map(function (k) {
+                        var arr = single[k] || [];
+                        return '<div>' + arr.map(cellHTML).join('') + '</div>';
+                    }).join('');
+
+                    var multiCols = Object.keys(multi).sort().map(function (k) {
+                        var arr = multi[k] || [];
+                        return '<div>' + arr.map(cellHTML).join('') + '</div>';
+                    }).join('');
+
+                    return [
+                        '<div class="sample-row">',
+                        '<div class="icon">H</div>',
+                        '<div class="alleles">',
+                        '<div class="grid">', singleCols, '</div>',
+                        (multiCols ? '<div style="margin-top:12px;" class="grid">' + multiCols + '</div>' : ''),
+                        '</div>',
+                        '</div>'
+                    ].join('');
+                }
+
+                // 事件：切换分组、展开/收起项
+                elTabs.addEventListener('click', function (e) {
+                    var t = e.target.closest('.group-tab');
+                    if (!t) return;
+                    activeGroup = t.getAttribute('data-name') || '';
+                    var groups = groupByClinical(firstData);
+                    renderTabs(groups);
+                    renderCollapse(groups);
+                });
+
+                elColl.addEventListener('click', function (e) {
+                    var item = e.target.closest('.item');
+                    if (!item) return;
+                    var idx = item.getAttribute('data-idx');
+                    var map = openMap[activeGroup] || (openMap[activeGroup] = {});
+                    map[idx] = !map[idx];
+                    item.classList.toggle('open', !!map[idx]);
+                });
+
+                // ====== 搜索 ======
+                function doSearch() {
+                    hideErr();
+                    var hla = (elHlaCombo.value || '').trim();
+                    var sampleId = (elSample.value || '').trim();
+
+                    if (!hla && !sampleId) {
+                        showErr('请填写 HLA 或 SampleId（至少一种）');
+                        return;
+                    }
+
+                    var url = '@@mysql_hla_haplotype', qs = [];
+                    if (hla) qs.push('hla=' + encodeURIComponent(hla));
+                    if (sampleId) qs.push('sampleId=' + encodeURIComponent(sampleId));
+                    url += (qs.length ? '?' + qs.join('&') : '');
+
+                    fetch(url, {credentials: 'same-origin'})
+                            .then(function (r) {
+                                return r.json();
+                            })
+                            .then(function (res) {
+                                if (!res || res.code !== 0) throw new Error((res && res.msg) || '接口错误');
+                                var data = res.data || {};
+                                firstData = data.SampleData || [];
+                                geneFreq = data.GeneFrequence || {};
+
+                                // 如果按 sampleId 查且返回有数据，自动把第一条样本 HLA 回填
+                                if (sampleId && firstData.length) {
+                                    var h = firstData[0].hla || '';
+                                    elHlaCombo.value = h;
+                                    setFieldPairsFromList(h ? h.split(';').map(function (x) {
+                                        return x.trim();
+                                    }).filter(Boolean) : []);
+                                }
+
+                                var groups = groupByClinical(firstData);
+                                elResult.style.display = Object.keys(groups).length ? 'block' : 'none';
+                                activeGroup = '';
+                                openMap = {};
+                                renderTabs(groups);
+                                renderCollapse(groups);
+                            })
+                            .catch(function (err) {
+                                showErr(err && (err.message || err) || '请求失败');
+                            });
+                }
+
+                // ====== init ======
+                buildLocusGrid();
+                bindInputs();
+                elBtn.addEventListener('click', doSearch);
+            })();
+        </script>
+        <style>
+            :root {
+                --bg: #f6f8fb;
+                --card: #fff;
+                --text: #111827;
+                --sub: #6b7280;
+                --border: #e5e7eb;
+                --muted: #9ca3af;
+                --brand: #3b82f6;
+                --brand-ink: #1d4ed8;
+                --chip: #eef2ff;
+                --chip-border: #c7d2fe;
+                --shadow: 0 4px 14px rgba(17, 24, 39, .06);
+                --radius-lg: 16px;
+                --radius-md: 12px;
+                --radius-sm: 8px;
+                --maxw: 1280px;
+                --space: 16px;
+            }
+
+            body {
+                background: var(--bg);
+            }
+
+            .page {
+                padding: 18px 20px 32px;
+            }
+
+            /* ========= 顶部导航（保持整站风格） ========= */
+            .container {
+                max-width: var(--maxw);
+                margin: 0 auto;
+            }
+
+            .card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                padding: 18px 18px 16px;
+                margin: 14px 0;
+                box-shadow: var(--shadow);
+            }
+
+            .card h2 {
+                margin: 0 0 12px;
+                font-size: 20px;
+                font-weight: 800;
+                color: var(--text);
+                letter-spacing: .2px;
+            }
+
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 12px;
+            }
+
+            @media (max-width: 1200px) {
+                .form-grid {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+            }
+
+            @media (max-width: 720px) {
+                .form-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .locus-block {
+                background: #fafbff;
+                border: 1px dashed var(--border);
+                border-radius: var(--radius-md);
+                padding: 10px;
+                transition: box-shadow .15s ease, border-color .15s ease;
+            }
+
+            .locus-block:hover {
+                border-color: #d6d9e5;
+                box-shadow: 0 2px 10px rgba(17, 24, 39, .05);
+            }
+
+            .locus-label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 6px;
+            }
+
+            .locus-label::before {
+                content: "●";
+                font-size: 10px;
+                color: var(--brand);
+            }
+
+            .ipt {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                font-size: 13px;
+                background: #fff;
+                outline: none;
+                transition: border-color .15s ease, box-shadow .15s ease;
+            }
+
+            .ipt:focus {
+                border-color: #bfd1ff;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+            }
+
+            .ipt + .ipt {
+                margin-top: 8px;
+            }
+
+            .form-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-top: 12px;
+            }
+
+            .form-row .lbl {
+                min-width: 92px;
+                font-size: 13px;
+                color: #0f172a;
+                font-weight: 800;
+            }
+
+            .muted {
+                color: var(--muted);
+                font-size: 12px;
+                margin-top: 8px;
+            }
+
+            .err {
+                color: #dc2626;
+                margin-top: 8px;
+                display: none;
+            }
+
+            .btn {
+                padding: 9px 18px;
+                border: 1px solid var(--chip-border);
+                background: linear-gradient(180deg, #f5f7ff, #eef2ff);
+                color: #3730a3;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: 800;
+                letter-spacing: .2px;
+                transition: transform .05s ease, box-shadow .15s ease, border-color .15s ease;
+            }
+
+            .btn:hover {
+                border-color: #aab8ff;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, .12);
+            }
+
+            .btn:active {
+                transform: translateY(1px);
+            }
+
+            .group-tabs {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin: 2px 0 12px;
+            }
+
+            .group-tab {
+                padding: 6px 12px;
+                border: 1px solid var(--border);
+                background: #fff;
+                border-radius: 999px;
+                cursor: pointer;
+                font-size: 13px;
+                color: #334155;
+                transition: all .15s ease;
+                user-select: none;
+            }
+
+            .group-tab:hover {
+                border-color: #d6dcff;
+                background: #f8faff;
+            }
+
+            .group-tab.active {
+                background: var(--chip);
+                color: var(--brand-ink);
+                border-color: var(--chip-border);
+                font-weight: 800;
+                box-shadow: 0 2px 8px rgba(59, 130, 246, .12) inset;
+            }
+
+            .result-collapse {
+                border-top: 1px solid var(--border);
+            }
+
+            .item {
+                border-bottom: 1px solid var(--border);
+                padding: 12px 2px;
+            }
+
+            .item-hd {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+            }
+
+            .item-hd .idx {
+                color: #4b5563;
+                font-weight: 700;
+            }
+
+            .item-bd {
+                margin-top: 10px;
+                display: none;
+            }
+
+            .item.open .item-bd {
+                display: block;
+            }
+
+            .sample-row {
+                display: flex;
+                gap: 14px;
+                align-items: flex-start;
+            }
+
+            .icon {
+                width: 40px;
+                height: 40px;
+                background: var(--chip);
+                border: 1px solid var(--chip-border);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                color: var(--brand-ink);
+                flex: 0 0 auto;
+                box-shadow: inset 0 1px 2px rgba(59, 130, 246, .08);
+            }
+
+            .alleles {
+                flex: 1;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px 14px;
+            }
+
+            @media (max-width: 900px) {
+                .grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .allele-cell {
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 10px;
+                background: #fff;
+                transition: box-shadow .15s ease, transform .05s ease;
+            }
+
+            .allele-cell:hover {
+                box-shadow: var(--shadow);
+                transform: translateY(-1px);
+            }
+
+            .allele-name {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-height: 32px;
+                font-weight: 800;
+                color: #0f172a;
+            }
+
+            .allele-name .ico {
+                color: #f59e0b;
+            }
+
+            .bars {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                margin-top: 8px;
+                flex-wrap: wrap;
+            }
+
+            .bar {
+                position: relative;
+                width: 130px;
+                height: 18px;
+                border: 2px solid #9FCEFA; /* 默认 PBMC 边框色 */
+                border-radius: 6px;
+                overflow: hidden;
+                background: #fff;
+            }
+
+            .bar .fill {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 0;
+                background: #9FCEFA; /* 默认 PBMC 填充色 */
+                transition: width .25s ease;
+            }
+
+            .bar .txt {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: #0f172a;
+                font-weight: 700;
+                text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+            }
+
+            /* BCPBMC 样式 */
+            .bar.bcpbmc {
+                border-color: #C6E2C5;
+            }
+
+            .bar.bcpbmc .fill {
+                background: #C6E2C5;
+            }
+
+            /* 小徽标（PBMC / BCPBMC） */
+            .chip {
+                padding: 2px 8px;
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                font-size: 11px;
+                color: #334155;
+                background: #f8fafc;
+            }
+
+            .chip.pb {
+                border-color: #9FCEFA;
+                background: #f4faff;
+            }
+
+            .chip.bc {
+                border-color: #C6E2C5;
+                background: #f5fbf4;
+            }
+        </style>
+    </metal:module>
+
+    <metal:use metal:use-macro="template/macros/module" />
+</metal:page>

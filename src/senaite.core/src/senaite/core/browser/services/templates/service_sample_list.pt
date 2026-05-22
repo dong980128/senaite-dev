@@ -1,0 +1,58 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="senaite.core">
+
+  <!-- 页面标题：显示当前服务名称 -->
+  <metal:content-title fill-slot="content-title">
+    <h1 class="documentFirstHeading">
+      <span>检验项目样本列表：</span>
+      <span tal:content="view/service_title">Service Title</span>
+    </h1>
+  </metal:content-title>
+
+  <metal:content-core fill-slot="content-core">
+    <div id="content-core">
+
+      <!-- 返回总览页 -->
+      <p>
+        <a tal:attributes="href string:${context/absolute_url}/@@service-samples">
+          ← 返回检验项目列表
+        </a>
+      </p>
+
+      <div class="bika-listing-table-wrapper">
+        <table class="listing" cellspacing="0" cellpadding="0">
+          <thead>
+            <tr>
+              <th class="nosort">样本 ID</th>
+              <th class="nosort">标题</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tal:rows repeat="sample view/samples">
+              <tr>
+                <td>
+                  <a tal:attributes="href sample/url"
+                     tal:content="sample/id">
+                    Sample ID
+                  </a>
+                </td>
+                <td tal:content="sample/title">
+                  Sample Title
+                </td>
+              </tr>
+            </tal:rows>
+          </tbody>
+        </table>
+      </div>
+
+      <tal:no-samples condition="not: view/samples">
+        <p>当前检验项目尚无相关样本。</p>
+      </tal:no-samples>
+
+    </div>
+  </metal:content-core>
+
+</html>

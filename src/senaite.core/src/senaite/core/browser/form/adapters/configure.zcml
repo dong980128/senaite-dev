@@ -1,0 +1,86 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           i18n_domain="senaite.core">
+
+  <!-- Add Form: DX Sample Template -->
+  <adapter
+      name="++add++SampleTemplate"
+      for="senaite.core.interfaces.ISampleTemplates
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".sampletemplate.EditForm"/>
+  <!-- Edit Form: DX Sample Template -->
+  <adapter
+      for="senaite.core.interfaces.ISampleTemplate
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".sampletemplate.EditForm"/>
+
+  <!-- Add Form: DX Sample Type -->
+  <adapter
+      name="++add++SampleType"
+      for="senaite.core.interfaces.ISampleTypes
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".sampletype.EditForm"/>
+  <!-- Edit Form: DX Sample Type -->
+  <adapter
+      for="senaite.core.interfaces.ISampleType
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".sampletype.EditForm"/>
+
+  <!-- Edit Form: Lab Contact -->
+  <adapter
+      for="bika.lims.interfaces.ILabContact
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".labcontact.EditForm"/>
+
+  <!-- ++add++AnalysisProfile add view handler -->
+  <adapter
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      name="++add++AnalysisProfile"
+      factory=".analysisprofile.EditForm"/>
+
+  <!-- Edit Form: Analysis Profile -->
+  <adapter
+      for="senaite.core.interfaces.IAnalysisProfile
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".analysisprofile.EditForm"/>
+
+  <!-- Edit Form: Analysis Service -->
+  <adapter
+      for="bika.lims.interfaces.IAnalysisService
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".analysisservice.EditForm"/>
+
+  <!-- Edit Form: Calculation
+       XXX: Fix interface import! -->
+  <adapter
+      for="bika.lims.interfaces.calculation.ICalculation
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".calculation.EditForm"/>
+
+  <!-- Edit Form: Method -->
+  <adapter
+      for="bika.lims.interfaces.IMethod
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".method.EditForm"/>
+
+  <!-- Add Form: DX WorksheetTemplate -->
+  <adapter
+      name="++add++WorksheetTemplate"
+      for="senaite.core.interfaces.IWorksheetTemplates
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".worksheettemplate.EditForm"/>
+
+  <!-- Edit Form: WorksheetTemplate -->
+  <adapter
+      for="senaite.core.interfaces.IWorksheetTemplate
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".worksheettemplate.EditForm"/>
+
+  <!-- Custom Form: Instrument Import -->
+  <adapter
+      name="data_import_form"
+      for="Products.CMFCore.interfaces.ISiteRoot
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".data_import.EditForm"/>
+
+</configure>

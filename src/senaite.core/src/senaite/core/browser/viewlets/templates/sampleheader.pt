@@ -1,0 +1,430 @@
+<div id="senaite-sampleheader"
+         tal:define="senaite_view python:context.restrictedTraverse('@@senaite_view');
+        test nocall:senaite_view/test;
+        errors python:options.get('errors', {}) or {};
+        config python:view.get_configuration();
+        prominent_columns python:config.get('prominent_columns');
+        standard_columns python:config.get('standard_columns');
+        prominent_fields python:config.get('prominent_fields');
+        standard_fields python:config.get('standard_fields');
+        render_prominent_fields python:prominent_columns > 0 and len(prominent_fields) > 0;
+        render_standard_fields python:standard_columns > 0 and len(standard_fields) > 0;
+        show_standard_fields python:config.get('show_standard_fields');
+        toggle_css python:'collapse show' if show_standard_fields else 'collapse';"
+         i18n:domain="senaite.core">
+
+    <div class="row">
+        <div class="col-sm-12">
+
+            <!-- SAMPLE HEADER FORM -->
+            <tal:comment condition="python:False">
+                <!--
+                     Note: the `novalidate` attribute is needed to avoid browser validation
+                     when e.g. the "expected sampling date" has passed and another value
+                     wants to be changed.
+
+                     https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation
+                -->
+            </tal:comment>
+            <form id="senaite-sampleheader-form"
+                  name="sampleheader_form"
+                  class="senaite-form"
+                  method="post" novalidate>
+
+                <!-- Hidden fields -->
+                <input type="hidden" name="sampleheader_form_submitted" value="1"/>
+
+                <!-- Display Controls -->
+                <div class="sampleheader-controls d-flex justify-content-end">
+                    <div class="pr-3" tal:condition="python:view.can_manage_sample_fields()">
+                        <a class="text-decoration-none"
+                           target="_blank"
+                                 tal:attributes="href python:context.absolute_url() + '/manage-sample-fields'">
+                            <i class="fas fa-tasks"></i>
+                        </a>
+                    </div>
+                    <!-- Toggle standard fields visibility -->
+                    <div tal:condition="python:render_standard_fields">
+                        <a href="#" class="text-decoration-none" data-toggle="collapse"
+                           data-target="#sampleheader-standard-fields">
+                            <tal:toggleicons tal:condition="python:show_standard_fields">
+                                <i id="toggle-show-icon" class="fas fa-window-maximize"></i>
+                                <i id="toggle-hide-icon" class="fas fa-window-minimize d-none"></i>
+                            </tal:toggleicons>
+                            <tal:toggleicons tal:condition="python:not show_standard_fields">
+                                <i id="toggle-show-icon" class="fas fa-window-maximize d-none"></i>
+                                <i id="toggle-hide-icon" class="fas fa-window-minimize"></i>
+                            </tal:toggleicons>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Prominent fields -->
+                <div id="sampleheader-prominent-fields" class="table-responsive"
+                         tal:condition="python:render_prominent_fields">
+                    <table class="sampleheader-table table table-sm table-bordered mb-1">
+                        <tr tal:repeat="group python:view.grouper(prominent_fields, prominent_columns)">
+                            <tal:batch tal:repeat="name python:group">
+                                <tal:fielddata tal:condition="python:name != 'Remarks'"
+                                         tal:define="fieldinfo python:view.get_field_info(name);
+                                        mode python:fieldinfo.get('mode');
+                                        html python:fieldinfo.get('html');
+                                        field python:fieldinfo.get('field');
+                                        label python:fieldinfo.get('label');
+                                        description python:fieldinfo.get('description');
+                                        required python:fieldinfo.get('required');">
+                                    <td class="bg-light text-truncate"
+                                        style="width:200px;max-width:200px;">
+                                        <!-- Widget Label -->
+                                        <span tal:attributes="title description"
+                                                data-toggle="tooltip"
+                                                 tal:content="structure label"/>
+                                        <!-- Display a notification icon if the field is primary bound
+                                             (if changes propagate to partitions) -->
+                                        <tal:primary_bound
+                                                condition="python:mode == 'edit' and view.is_primary_bound(field)">
+                                            <i class="fas fa-sitemap small"
+                                               data-toggle="tooltip"
+                                               title="Changes will be propagated to partitions"
+                                                     i18n:attributes="title"></i>
+                                        </tal:primary_bound>
+                                        <!-- Display Required Marker -->
+                                        <span class="required"
+                                                 tal:condition="python:required"
+                                              title="Required"
+                                                 i18n:attributes="title title_required;"> </span>
+                                    </td>
+                                    <td>
+                                        <div class="form-row" tal:condition="python:html">
+                                            <div class="col-auto">
+                                                <!-- Render widget HTML -->
+                                                <div tal:content="structure html"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-row" tal:condition="python:not html">
+                                            <div class="col-auto" tal:condition="python:mode in ['view', 'edit']">
+                                                <!-- Render widget macro -->
+                                                <metal:field use-macro="python:view.render_widget(field, mode=mode)"/>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tal:fielddata>
+                            </tal:batch>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Standard fields（拆为：采样信息 / 入库核对） -->
+                <div id="sampleheader-standard-fields" class="table-responsive"
+                         tal:condition="python:render_standard_fields"
+                         tal:attributes="class string:table-responsive ${toggle_css}">
+
+                    <!-- 采样信息 -->
+                    <tal:sampling define="fields python:view.get_sampling_fields();
+                        cols   python:standard_columns">
+                        <table class="sampleheader-table table table-sm table-bordered">
+                            <tr tal:repeat="group python:view.grouper(fields, cols)">
+                                <tal:batch tal:repeat="name python:group">
+                                    <tal:fielddata tal:condition="python:name != 'Remarks'"
+                                             tal:define="
+                                                    fieldinfo python:view.get_field_info(name);
+                                                            mode      python:fieldinfo.get('mode');
+                                                                    html      python:fieldinfo.get('html');
+                                                                            field     python:fieldinfo.get('field');
+                                                                                    label     python:fieldinfo.get('label');
+                                                                                            description python:fieldinfo.get('description');
+                                                                                                    required  python:fieldinfo.get('required');">
+                                        <td class="sampleheader-table-label bg-light text-truncate"
+                                            style="width:200px;max-width:200px;">
+              <span tal:attributes="title description"
+                      data-toggle="tooltip"
+                       tal:content="structure label"/>
+                                            <tal:primary_bound
+                                                    condition="python:mode == 'edit' and view.is_primary_bound(field)">
+                                                <i class="fas fa-sitemap small" data-toggle="tooltip"
+                                                   title="Changes will be propagated to partitions"
+                                                         i18n:attributes="title"></i>
+                                            </tal:primary_bound>
+                                            <span class="required" tal:condition="python:required"
+                                                  title="Required" i18n:attributes="title title_required;"> </span>
+                                        </td>
+                                        <td class="sampleheader-table-field">
+                                            <div class="form-row" tal:condition="python:html">
+                                                <div class="col-auto">
+                                                    <div tal:content="structure html"/>
+                                                </div>
+                                            </div>
+                                            <div class="form-row" tal:condition="python:not html">
+                                                <div class="col-auto" tal:condition="python:mode in ['view','edit']">
+                                                    <metal:field
+                                                            use-macro="python:view.render_widget(field, mode=mode)"/>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tal:fielddata>
+                                </tal:batch>
+                            </tr>
+                        </table>
+
+                    </tal:sampling>
+
+                    <!-- 入库核对 -->
+                    <tal:receiving tal:condition="python:view.can_view_receiving()"
+                            define="fields python:view.get_receiving_fields();
+                         cols   python:standard_columns">
+                        <h6 class="mt-3 mb-1 text-muted">入库核对</h6>
+                        <table class="sampleheader-table table table-sm table-bordered">
+                            <tr tal:repeat="group python:view.grouper(fields, cols)">
+                                <tal:batch tal:repeat="name python:group">
+                                    <tal:fielddata tal:define="
+                                            fieldinfo python:view.get_field_info(name);
+                                                    mode      python:fieldinfo.get('mode');
+                                                            html      python:fieldinfo.get('html');
+                                                                    field     python:fieldinfo.get('field');
+                                                                            label     python:fieldinfo.get('label');
+                                                                                    description python:fieldinfo.get('description');
+                                                                                            required  python:fieldinfo.get('required');">
+                                        <td class="sampleheader-table-label bg-light text-truncate"
+                                            style="width:200px;max-width:200px;">
+              <span tal:attributes="title description"
+                      data-toggle="tooltip"
+                       tal:content="structure label"/>
+                                            <tal:primary_bound
+                                                    condition="python:mode == 'edit' and view.is_primary_bound(field)">
+                                                <i class="fas fa-sitemap small" data-toggle="tooltip"
+                                                   title="Changes will be propagated to partitions"
+                                                         i18n:attributes="title"></i>
+                                            </tal:primary_bound>
+                                            <span class="required" tal:condition="python:required"
+                                                  title="Required" i18n:attributes="title title_required;"> </span>
+                                        </td>
+                                        <td class="sampleheader-table-field">
+                                            <div class="form-row" tal:condition="python:html">
+                                                <div class="col-auto">
+                                                    <div tal:content="structure html"/>
+                                                </div>
+                                            </div>
+                                            <div class="form-row" tal:condition="python:not html">
+                                                <div class="col-auto" tal:condition="python:mode in ['view','edit']">
+                                                    <metal:field
+                                                            use-macro="python:view.render_widget(field, mode=mode)"/>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tal:fielddata>
+                                </tal:batch>
+                            </tr>
+                        </table>
+                    </tal:receiving>
+
+                </div>
+
+                <!-- 单独的 Remarks 行 -->
+                <div id="sampleheader-remarks" class="table-responsive mt-3"
+                         tal:condition="python:'Remarks' in view.fields">
+                    <table class="sampleheader-table table table-sm table-bordered">
+                        <tr>
+                            <tal:fielddata tal:define="fi python:view.get_field_info('Remarks');
+                                    mode python:fi.get('mode');
+                                            html python:fi.get('html');
+                                                    field python:fi.get('field');
+                                                            label python:fi.get('label');
+                                                                    description python:fi.get('description');
+                                                                            required python:fi.get('required');">
+
+                                <!-- 左侧标签 -->
+                                <td class="sampleheader-table-label bg-light text-truncate"
+                                    style="width:200px;max-width:200px;">
+          <span tal:attributes="title description"
+                  data-toggle="tooltip"
+                   tal:content="structure label" />
+                                    <span class="required" tal:condition="python:required"
+                                          title="Required" i18n:attributes="title title_required;"> </span>
+                                </td>
+
+                                <!-- 右侧控件（占整行） -->
+                                <td class="sampleheader-table-field">
+                                    <div class="form-row" tal:condition="python:html">
+                                        <div class="col">
+                                            <div tal:content="structure html" />
+                                        </div>
+                                    </div>
+                                    <div class="form-row" tal:condition="python:not html">
+                                        <div class="col" tal:condition="python:mode in ['view','edit']">
+                                            <metal:field use-macro="python:view.render_widget(field, mode=mode)"/>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tal:fielddata>
+                        </tr>
+                    </table>
+                </div>
+
+                <tal:controls condition="python:render_prominent_fields and render_standard_fields">
+                    <!-- Save Button -->
+                    <input tal:condition="python:view.is_edit_allowed()"
+                            class="btn btn-sm btn-primary mt-2"
+                            type="submit"
+                            name="sampleheader_form_save"
+                            value="Save"
+                             i18n:attributes="value label_save;"/>
+                </tal:controls>
+            </form>
+
+
+        </div>
+    </div>
+
+    <tal:js tal:define="portal context/@@plone_portal_state/portal;">
+        <!-- needed for datetime fields -->
+        <script type="text/javascript"
+                 tal:attributes="src python:portal.absolute_url() + '/senaite_widgets/datetimewidget.js'"></script>
+
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function (event) {
+                let show_icon = document.getElementById("toggle-show-icon");
+                let hide_icon = document.getElementById("toggle-hide-icon");
+
+                // ====== 原有：折叠/展开标准字段时切换图标 ======
+                $("#sampleheader-standard-fields").on("hide.bs.collapse", function () {
+                    console.log("Hide standard fields");
+                    $(show_icon).toggleClass("d-none", true);
+                    $(hide_icon).toggleClass("d-none", false);
+                });
+                $("#sampleheader-standard-fields").on("show.bs.collapse", function () {
+                    console.log("Show standard fields");
+                    $(show_icon).toggleClass("d-none", false);
+                    $(hide_icon).toggleClass("d-none", true);
+                });
+
+                // ======================================================
+                // 样本类型  →  病灶类型 / 病灶类型_说明 显示控制
+                // ======================================================
+
+                // 根据“字段标签文字”找到对应的 label 单元格和 field 单元格
+                function findFieldByLabel(labelText) {
+                    // 所有 label 都在 td.sampleheader-table-label 里的第一个 span 中
+                    var $labelSpan = $("td.sampleheader-table-label span").filter(function () {
+                        var txt = ($(this).text() || "").replace(/\s/g, "");
+                        return txt === labelText;
+                    }).first();
+
+                    if (!$labelSpan.length) {
+                        return null;
+                    }
+
+                    var $labelTd = $labelSpan.closest("td.sampleheader-table-label");
+                    var $fieldTd = $labelTd.next(".sampleheader-table-field");
+                    if (!$fieldTd.length) {
+                        return null;
+                    }
+                    return {$labelTd: $labelTd, $fieldTd: $fieldTd};
+                }
+
+                // 显示/隐藏某个字段（同时处理 label 和 field 两个单元格）
+                function setFieldVisible(labelText, visible) {
+                    var cells = findFieldByLabel(labelText);
+                    if (!cells) {
+                        return;
+                    }
+                    if (visible) {
+                        cells.$labelTd.show();
+                        cells.$fieldTd.show();
+                    } else {
+                        cells.$labelTd.hide();
+                        cells.$fieldTd.hide();
+                    }
+                }
+
+                function getSampleTypeText() {
+                    var cells = findFieldByLabel("样本类型");
+                    if (!cells) {
+                        return "";
+                    }
+                    var $input = cells.$fieldTd.find("select, input, textarea").first();
+                    var text = "";
+
+                    if ($input.length) {
+                        if ($input.is("select")) {
+                            text = $input.find("option:selected").text();
+                        } else {
+                            text = $input.val();
+                        }
+                    } else {
+                        text = cells.$fieldTd.text();
+                    }
+                    return (text || "").replace(/\s/g, "");
+                }
+
+                //  是否显示病灶类型
+                function updateDiseaseFieldsVisibility() {
+                    var sampleType = getSampleTypeText();
+                    console.log("【sampleheader】当前样本类型 =", sampleType);
+
+                    var showTypes = ["新鲜组织", "切片", "蜡块", "蜡卷"];
+                    var shouldShow = showTypes.indexOf(sampleType) !== -1;
+
+                    setFieldVisible("病灶类型", shouldShow);
+                    setFieldVisible("病灶类型_说明", shouldShow);
+                }
+
+                updateDiseaseFieldsVisibility();
+                (function bindSampleTypeListener() {
+                    var cells = findFieldByLabel("样本类型");
+                    if (!cells) {
+                        return;
+                    }
+                    var $input = cells.$fieldTd.find("select, input, textarea").first();
+                    if (!$input.length) {
+                        return;
+                    }
+                    $input.on("change", function () {
+                        updateDiseaseFieldsVisibility();
+                    });
+                })();
+
+                function getBloodTransfusionValue() {
+                    var cells = findFieldByLabel("12个月内是否输血");
+                    if (!cells) return "";
+                    var $input = cells.$fieldTd.find("select, input").first();
+                    if (!$input.length) return "";
+                    return ($input.val() || "").trim().toLowerCase();
+                }
+
+                function updateBloodTransfusionHistoryVisibility() {
+                    // 如果"12个月内是否输血"字段本身不存在（旧数据），
+                    // findFieldByLabel 返回 null，此时"输血史"字段也不存在，无需操作
+                    var cells = findFieldByLabel("12个月内是否输血");
+                    if (!cells) return;
+                    var val = getBloodTransfusionValue();
+                    setFieldVisible("输血史", val === "yes");
+                }
+
+                updateBloodTransfusionHistoryVisibility();
+
+                (function bindBloodTransfusionListener() {
+                    var cells = findFieldByLabel("12个月内是否输血");
+                    if (!cells) return;
+                    var $input = cells.$fieldTd.find("select, input").first();
+                    if (!$input.length) return;
+                    $input.on("change", function () {
+                        updateBloodTransfusionHistoryVisibility();
+                    });
+                })();
+            });
+        </script>
+
+    </tal:js>
+    <tal:css tal:define="portal context/@@plone_portal_state/portal;">
+        <style type="text/css" media="screen">
+            article#content header {
+                margin-bottom: 0;
+            }
+
+            form[name="sampleheader_form"] div.field {
+                margin-bottom: 0;
+            }
+        </style>
+    </tal:css>
+
+</div>

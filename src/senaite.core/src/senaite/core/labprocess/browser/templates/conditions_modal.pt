@@ -1,0 +1,506 @@
+<!--
+  conditions_modal.pt
+  请检信息 Modal 组件 - 复用系统 set_analysis_conditions 表格样式
+
+  单个 AR：LPConditionsModal.open(options)
+    options.processUid  - LabProcess UID
+    options.arUrl       - AR 绝对 URL
+    options.onConfirm   - function(conditionValues)  [{title,value},...]
+    options.onCancel    - function()（可选）
+    options.title       - modal 标题（可选）
+    options.confirmLabel - 确认按钮文字（可选）
+
+  批量 AR：LPConditionsModal.openBatch(options)
+    options.processUid  - LabProcess UID
+    options.baseUrl     - 站点根 URL（用于请求 @@get-batch-process-conditions）
+    options.arUids      - AR UID 数组
+    options.onConfirm   - function(conditionsPerSample)
+                          conditionsPerSample: {ar_uid: [{title,value},...], ...}
+    options.onCancel    - function()（可选）
+    options.title       - modal 标题（可选）
+-->
+
+<div id="lp-conditions-modal"
+     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.5);z-index:9999;
+            align-items:center;justify-content:center;">
+  <div id="lp-conditions-inner"
+       style="background:#fff;border-radius:6px;padding:24px;
+              min-width:600px;max-width:90vw;max-height:85vh;
+              overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.3);">
+    <h4 id="lp-conditions-title"
+        style="margin-top:0;border-bottom:1px solid #eee;padding-bottom:10px;
+               display:flex;align-items:center;gap:8px;">
+    </h4>
+    <div id="lp-conditions-body"></div>
+    <div style="margin-top:16px;text-align:right;
+                border-top:1px solid #eee;padding-top:12px;">
+      <button id="lp-conditions-cancel"
+              class="btn btn-default btn-sm"
+              style="margin-right:8px;"></button>
+      <button id="lp-conditions-confirm"
+              class="btn btn-primary btn-sm"></button>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+(function (global) {
+    "use strict";
+
+    if (global.LPConditionsModal) return;
+
+    // 中文文本 Unicode 转义，避免 Chameleon 编码问题
+    var TEXT = {
+        title:         "\u8bf7\u68c0\u4fe1\u606f",
+        cancel:        "\u53d6\u6d88",
+        confirm:       "\u786e\u8ba4\u521b\u5efa",
+        no_conditions: "\u8be5\u6d41\u7a0b\u65e0\u8bf7\u68c0\u4fe1\u606f\u914d\u7f6e",
+        col_condition: "Condition",
+        col_value:     "Value",
+        col_report:    "Show in report",
+        col_sample:    "\u6837\u672c",
+        required_title:"\u5fc5\u586b"
+    };
+
+    var $modal   = null;
+    var $body    = null;
+    var $title   = null;
+    var $confirm = null;
+    var $cancel  = null;
+
+    var _onConfirm = null;
+    var _onCancel  = null;
+    var _mode      = "single"; // "single" | "batch"
+
+    function init() {
+        if ($modal) return;
+        $modal   = $("#lp-conditions-modal");
+
+        // 移到 body 直接子级，避免被父级 Bootstrap modal aria-hidden 影响
+        if ($modal.length && $modal.parent()[0] !== document.body) {
+            $("body").append($modal.detach());
+        }
+
+        $body    = $("#lp-conditions-body");
+        $title   = $("#lp-conditions-title");
+        $confirm = $("#lp-conditions-confirm");
+        $cancel  = $("#lp-conditions-cancel");
+
+        $title.text(TEXT.title);
+        $cancel.text(TEXT.cancel);
+        $confirm.text(TEXT.confirm);
+
+        $cancel.on("click", function () {
+            close();
+            if (typeof _onCancel === "function") _onCancel();
+        });
+        $modal.on("click", function (e) {
+            if ($(e.target).is($modal)) {
+                close();
+                if (typeof _onCancel === "function") _onCancel();
+            }
+        });
+
+        $confirm.on("click", function () {
+            if (_mode === "batch") {
+                var result = collectBatchValues();
+                close();
+                if (typeof _onConfirm === "function") _onConfirm(result);
+            } else {
+                var values = collectValues();
+                close();
+                if (typeof _onConfirm === "function") _onConfirm(values);
+            }
+        });
+
+        // 阻止父级 Bootstrap modal 关闭时关闭我们的 modal
+        $(document).on("hide.bs.modal", function (e) {
+            if ($modal && $modal.css("display") === "flex") {
+                e.stopPropagation();
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+
+    function close() {
+        if ($modal) {
+            $modal.css("display", "none");
+            $body.empty();
+        }
+    }
+
+    function setTitle(text) {
+        $title.empty();
+        $title.append($('<i class="fas fa-list" style="margin-right:8px;"></i>'));
+        $title.append(document.createTextNode(text || TEXT.title));
+    }
+
+    // ----------------------------------------------------------------
+    // 单个样本：渲染纵向表格（与系统 set_analysis_conditions.pt 一致）
+    // ----------------------------------------------------------------
+    function renderConditions(conditions) {
+        $body.empty();
+        if (!conditions || !conditions.length) {
+            $body.html('<p style="color:#999;margin:8px 0;">' + TEXT.no_conditions + '</p>');
+            return;
+        }
+        var $table = $('<table class="table table-sm small" style="margin-bottom:0;"></table>');
+        var $thead = $('<thead><tr></tr></thead>');
+        $("tr", $thead)
+            .append($('<th style="width:20%;"></th>').text(TEXT.col_condition))
+            .append($('<th style="width:60%;"></th>').text(TEXT.col_value))
+            .append($('<th style="width:20%;"></th>').text(TEXT.col_report));
+        $table.append($thead);
+
+        var $tbody = $('<tbody></tbody>');
+        $.each(conditions, function (idx, cond) {
+            $tbody.append(_makeConditionRow(cond, idx, null));
+        });
+        $table.append($tbody);
+        $body.append($table);
+    }
+
+    // ----------------------------------------------------------------
+    // 批量样本：渲染横向表格（行=样本，列=条件字段）
+    // ----------------------------------------------------------------
+    function renderBatchConditions(fields, samples) {
+        $body.empty();
+        if (!fields || !fields.length) {
+            $body.html('<p style="color:#999;margin:8px 0;">' + TEXT.no_conditions + '</p>');
+            return;
+        }
+
+        var $wrap = $('<div style="overflow-x:auto;"></div>');
+        var $table = $('<table class="table table-sm small table-bordered" style="margin-bottom:0;min-width:600px;"></table>');
+
+        // thead：第一列"样本"，其余为条件字段名
+        var $thead = $('<thead></thead>');
+        var $hrow  = $('<tr></tr>');
+        $hrow.append($('<th style="white-space:nowrap;"></th>').text(TEXT.col_sample));
+        $.each(fields, function (_, f) {
+            var label = f.title || "";
+            if (f.required) label += " *";
+            $hrow.append($('<th style="white-space:nowrap;"></th>').text(label));
+        });
+        $thead.append($hrow);
+        $table.append($thead);
+
+        // tbody：每行一个样本
+        var $tbody = $('<tbody></tbody>');
+        $.each(samples, function (rowIdx, sample) {
+            var $tr = $('<tr></tr>');
+
+            // 样本 ID 列
+            $tr.append(
+                $('<td style="white-space:nowrap;font-weight:bold;vertical-align:middle;"></td>')
+                    .text(sample.ar_id || sample.ar_uid)
+            );
+
+            // 每个条件字段
+            $.each(fields, function (colIdx, f) {
+                var $td = $('<td></td>');
+                var prefill = (sample.values && sample.values[f.title]) || f.default || "";
+                var $input = _makeBatchInput(f, prefill, rowIdx, colIdx, sample.ar_uid);
+                $td.append($input);
+                $tr.append($td);
+            });
+
+            $tbody.append($tr);
+        });
+        $table.append($tbody);
+        $wrap.append($table);
+        $body.append($wrap);
+    }
+
+    // ----------------------------------------------------------------
+    // 控件生成（单个模式）
+    // ----------------------------------------------------------------
+    function _makeConditionRow(cond, idx, arUid) {
+        var title      = cond.title   || "";
+        var ctype      = cond.type    || "text";
+        var value      = cond.value   || cond.default || "";
+        var choices    = cond.choices || "";
+        var desc       = cond.description || "";
+        var req        = cond.required;
+        var isCheckbox = (ctype === "checkbox");
+        var isRequired = req && !isCheckbox;
+
+        var $tr = $('<tr></tr>');
+
+        // 左列：标签
+        var $tdLabel = $('<td></td>');
+        var $label = $('<label class="formQuestion"></label>').append(document.createTextNode(title));
+        if (isRequired) {
+            $label.append($('<span class="fieldRequired" title="' + TEXT.required_title + '">&nbsp;</span>'));
+        }
+        if (desc) {
+            $label.append('<br/>');
+            $label.append($('<span class="formHelp discreet help-block-small"></span>').text(desc));
+        }
+        $tdLabel.append($label);
+        $tr.append($tdLabel);
+
+        // 中列：控件
+        var $tdValue = $('<td></td>');
+        $tdValue.append(_makeInput(ctype, title, value, choices, isRequired, idx, arUid));
+        $tr.append($tdValue);
+
+        // 右列：report
+        $tr.append($('<td></td>').append($('<input type="checkbox"/>').attr("data-report-for", title)));
+
+        return $tr;
+    }
+
+    // ----------------------------------------------------------------
+    // 控件生成（批量模式，不带 report 列）
+    // ----------------------------------------------------------------
+    function _makeBatchInput(field, value, rowIdx, colIdx, arUid) {
+        return _makeInput(
+            field.type || "text",
+            field.title || "",
+            value,
+            field.choices || "",
+            field.required,
+            rowIdx * 100 + colIdx,
+            arUid
+        );
+    }
+
+    // ----------------------------------------------------------------
+    // 通用输入控件
+    // ----------------------------------------------------------------
+    function _makeInput(ctype, title, value, choices, isRequired, idx, arUid) {
+        var opts = choices
+            ? choices.split("|").map(function(s){return s.trim();}).filter(Boolean)
+            : [];
+
+        var dataAttrs = {"data-title": title, "data-type": ctype};
+        if (arUid) dataAttrs["data-ar-uid"] = arUid;
+
+        if (ctype === "multiselect" && opts.length) {
+            var selected = [];
+            if (Array.isArray(value)) {
+                selected = value;
+            } else if (typeof value === "string" && value) {
+                selected = value.indexOf("|") >= 0
+                    ? value.split("|").map(function(s){return s.trim();})
+                    : [value.trim()];
+            }
+            var $wrap = $('<div></div>');
+            $.each(opts, function (oidx, opt) {
+                var cbId = "lp-cond-" + idx + "-" + oidx;
+                var $div = $('<div class="form-check"></div>');
+                var $cb  = $('<input class="form-check-input" type="checkbox"/>').attr("id", cbId).val(opt);
+                $.each(dataAttrs, function(k, v){ $cb.attr(k, v); });
+                if (selected.indexOf(opt) >= 0) $cb.prop("checked", true);
+                $div.append($cb).append($('<label class="form-check-label"></label>').attr("for", cbId).text(opt));
+                $wrap.append($div);
+            });
+            return $wrap;
+
+        } else if (opts.length) {
+            var $sel = $('<select class="form-control form-control-sm"></select>');
+            $.each(dataAttrs, function(k, v){ $sel.attr(k, v); });
+            if (!isRequired) $sel.append('<option value=""></option>');
+            $.each(opts, function(_, opt) {
+                var $opt = $('<option></option>').val(opt).text(opt);
+                if (opt === value) $opt.attr("selected", "selected");
+                $sel.append($opt);
+            });
+            return $sel;
+
+        } else if (ctype === "checkbox") {
+            var $cb2 = $('<input type="checkbox"/>');
+            $.each(dataAttrs, function(k, v){ $cb2.attr(k, v); });
+            if (value === "true" || value === true) $cb2.prop("checked", true);
+            return $cb2;
+
+        } else {
+            var inputType = (ctype === "number") ? "number" : "text";
+            var $inp = $('<input/>').attr("type", inputType).val(value)
+                .addClass("form-control form-control-sm");
+            $.each(dataAttrs, function(k, v){ $inp.attr(k, v); });
+            if (isRequired) $inp.attr("required", "required");
+            return $inp;
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 收集单个模式的值
+    // ----------------------------------------------------------------
+    function collectValues() {
+        var values = [];
+        var multiDone = {};
+        $body.find("input[data-type='multiselect']").each(function () {
+            var t = $(this).attr("data-title");
+            if (multiDone[t]) return;
+            multiDone[t] = true;
+            var selected = [];
+            $body.find("input[data-type='multiselect'][data-title='" + t + "']:checked").each(function () {
+                selected.push($(this).val());
+            });
+            values.push({title: t, value: selected.join("|")});
+        });
+        $body.find("[data-title]").each(function () {
+            var $el = $(this);
+            var t  = $el.attr("data-title");
+            var ct = $el.attr("data-type");
+            if (!ct || ct === "multiselect") return;
+            var val = ct === "checkbox" ? ($el.prop("checked") ? "true" : "false") : ($el.val() || "");
+            values.push({title: t, value: val});
+        });
+        return values;
+    }
+
+    // ----------------------------------------------------------------
+    // 收集批量模式的值
+    // 返回：{ar_uid: [{title, value}, ...], ...}
+    // ----------------------------------------------------------------
+    function collectBatchValues() {
+        var result = {};
+
+        // multiselect：按 ar_uid + title 分组
+        var multiDone = {};
+        $body.find("input[data-type='multiselect']").each(function () {
+            var $el   = $(this);
+            var t     = $el.attr("data-title");
+            var arUid = $el.attr("data-ar-uid") || "__default__";
+            var key   = arUid + "|" + t;
+            if (multiDone[key]) return;
+            multiDone[key] = true;
+            var selected = [];
+            $body.find(
+                "input[data-type='multiselect'][data-title='" + t +
+                "'][data-ar-uid='" + arUid + "']:checked"
+            ).each(function () {
+                selected.push($(this).val());
+            });
+            if (!result[arUid]) result[arUid] = [];
+            result[arUid].push({title: t, value: selected.join("|")});
+        });
+
+        // 其他控件
+        $body.find("[data-title][data-ar-uid]").each(function () {
+            var $el   = $(this);
+            var t     = $el.attr("data-title");
+            var ct    = $el.attr("data-type");
+            var arUid = $el.attr("data-ar-uid");
+            if (!ct || ct === "multiselect") return;
+            var val = ct === "checkbox" ? ($el.prop("checked") ? "true" : "false") : ($el.val() || "");
+            if (!result[arUid]) result[arUid] = [];
+            result[arUid].push({title: t, value: val});
+        });
+
+        return result;
+    }
+
+    // ----------------------------------------------------------------
+    // 公开 API — 单个样本
+    // ----------------------------------------------------------------
+    function open(options) {
+        options = options || {};
+        _mode = "single";
+        init();
+        _onConfirm = options.onConfirm || null;
+        _onCancel  = options.onCancel  || null;
+        setTitle(options.title || TEXT.title);
+        $confirm.text(options.confirmLabel || TEXT.confirm);
+
+        var processUid = options.processUid || "";
+        var arUrl      = options.arUrl      || "";
+        if (!processUid || !arUrl) {
+            console.warn("[LPConditionsModal] processUid and arUrl are required");
+            return;
+        }
+
+        $.ajax({
+            url: arUrl + "/@@get-process-conditions",
+            method: "GET",
+            data: {process_uid: processUid, ar_uid: ""},
+            dataType: "json",
+            success: function (data) {
+                if (!data.success) {
+                    if (typeof _onConfirm === "function") _onConfirm([]);
+                    return;
+                }
+                var conditions = data.conditions || [];
+                if (!conditions.length) {
+                    if (typeof _onConfirm === "function") _onConfirm([]);
+                    return;
+                }
+                renderConditions(conditions);
+                $modal.css("display", "flex");
+            },
+            error: function () {
+                if (typeof _onConfirm === "function") _onConfirm([]);
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // 公开 API — 批量样本
+    // ----------------------------------------------------------------
+    function openBatch(options) {
+        options = options || {};
+        _mode = "batch";
+        init();
+        _onConfirm = options.onConfirm || null;
+        _onCancel  = options.onCancel  || null;
+        setTitle(options.title || TEXT.title);
+        $confirm.text(options.confirmLabel || TEXT.confirm);
+
+        var processUid = options.processUid || "";
+        var baseUrl    = options.baseUrl    || "";
+        var arUids     = options.arUids     || [];
+
+        console.log("[LPConditionsModal.openBatch] processUid=", processUid,
+                    "baseUrl=", baseUrl, "arUids=", arUids);
+
+        if (!processUid || !baseUrl || !arUids.length) {
+            console.warn("[LPConditionsModal.openBatch] missing required params, skip modal");
+            if (typeof _onConfirm === "function") _onConfirm({});
+            return;
+        }
+
+        $.ajax({
+            url: baseUrl + "/@@get-batch-process-conditions",
+            method: "GET",
+            data: {
+                process_uid: processUid,
+                ar_uids: arUids.join(",")
+            },
+            dataType: "json",
+            success: function (data) {
+                console.log("[LPConditionsModal.openBatch] response=", data);
+                if (!data.success) {
+                    console.error("[LPConditionsModal.openBatch] failed:", data.error);
+                    if (typeof _onConfirm === "function") _onConfirm({});
+                    return;
+                }
+                var fields  = data.fields  || [];
+                var samples = data.samples || [];
+                console.log("[LPConditionsModal.openBatch] fields=", fields.length, "samples=", samples.length);
+                if (!fields.length) {
+                    console.warn("[LPConditionsModal.openBatch] no fields, skip modal");
+                    if (typeof _onConfirm === "function") _onConfirm({});
+                    return;
+                }
+                renderBatchConditions(fields, samples);
+                $modal.css("display", "flex");
+            },
+            error: function () {
+                if (typeof _onConfirm === "function") _onConfirm({});
+            }
+        });
+    }
+
+    global.LPConditionsModal = {
+        open:      open,
+        openBatch: openBatch,
+        close:     close
+    };
+
+})(window);
+</script>

@@ -1,0 +1,54 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="senaite.core">
+
+  <!-- package includes -->
+  <include package=".referencewidget" />
+
+  <class class="ZPublisher.HTTPRequest.FileUpload">
+    <implements interface=".interfaces.ISenaiteFileUpload" />
+  </class>
+
+  <!-- Fix AssertionError:
+       Fileupload Adapter fails for ZPublisher.HTTPRequest.FileUpload objects
+
+       https://github.com/plone/plone.app.blob/issues/54 -->
+  <adapter factory=".fileupload.BlobbableFileUpload" />
+
+  <!-- Sample: "dispatch"
+  Note this applies wide, cause at the moment, this action only exists
+  for Analysis Requests and we always want this adapter to be in charge,
+  regardless of the context (Analysis Requests listing, Client folder, etc.) -->
+  <adapter
+    name="workflow_action_dispatch"
+    for="*
+         zope.publisher.interfaces.browser.IBrowserRequest"
+    factory=".sample.WorkflowActionDispatchAdapter"
+    provides="bika.lims.interfaces.IWorkflowActionAdapter"
+    permission="zope.Public" />
+
+  <!-- Sample: "multi_results"
+  Note this applies wide, cause at the moment, this action only exists
+  for Analysis Requests and we always want this adapter to be in charge,
+  regardless of the context (Analysis Requests listing, Client folder, etc.) -->
+  <adapter
+    name="workflow_action_multi_results"
+    for="*
+         zope.publisher.interfaces.browser.IBrowserRequest"
+    factory=".sample.WorkflowActionMultiResultsAdapter"
+    provides="bika.lims.interfaces.IWorkflowActionAdapter"
+    permission="zope.Public" />
+
+  <!-- Dynamic calculation of local roles for a given context and principal -->
+  <adapter factory=".localroles.DynamicLocalRoleAdapter" />
+
+  <!-- Adapter for the dynamic assignment of local and client-specific roles
+  for contents shared across clients -->
+  <adapter
+      for="senaite.core.behaviors.IClientShareable"
+      provides="senaite.core.interfaces.IDynamicLocalRoles"
+      factory=".localroles.ClientShareableLocalRoles"
+      name="senaite.core.adapter.localroles.clientshareable" />
+
+</configure>

@@ -1,0 +1,20 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      tal:omit-tag="">
+
+  <ul class="list-unstyled d-table-row">
+    <!-- list all referenced UIDs -->
+    <li tal:repeat="uid view/get_value" class="d-inline-block">
+      <tal:ref define="rendered python:view.render_reference(uid)">
+        <div tal:condition="python:rendered"
+            class="p-1 mb-1 mr-1 bg-light border rounded">
+          <span tal:replace="structure rendered"/>
+        </div>
+        <div tal:condition="python:not rendered" class="text-danger">
+          <span tal:content="uid"></span>
+        </div>
+      </tal:ref>
+    </li>
+  </ul>
+
+</html>

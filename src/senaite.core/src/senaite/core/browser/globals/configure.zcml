@@ -1,0 +1,37 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml">
+
+  <browser:page
+      name="temporary_context"
+      for="*"
+      permission="cmf.AddPortalContent"
+      class=".temporary_context.TemporaryContext"
+      />
+
+  <browser:page
+      name="senaite_view"
+      for="*"
+      permission="zope.Public"
+      class=".view.SenaiteView"
+      allowed_interface=".interfaces.ISenaiteView"
+      />
+
+  <browser:page
+      name="senaite_theme"
+      for="*"
+      permission="zope.Public"
+      class=".theme.SenaiteTheme"
+      allowed_interface=".interfaces.ISenaiteTheme"
+      />
+
+  <browser:page
+      for="*"
+      name="site-logo"
+      class=".sitelogo.SiteLogo"
+      permission="zope.Public"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+</configure>

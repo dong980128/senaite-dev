@@ -1,0 +1,102 @@
+<div id="ws-attachments"
+     class="attachments"
+     i18n:domain="senaite.core">
+
+  <button type="button"
+          class="btn btn-light dropdown-toggle mb-3"
+          data-toggle="collapse"
+          data-target="#ws-attachments-panel">
+    <i class="fas fa-paperclip" aria-hidden="true"/>
+    <span i18n:translate="">Attachments</span>
+  </button>
+
+  <div id="ws-attachments-panel"
+       class="collapse card p-2 mb-3 bg-light"
+       tal:define="attachments_view python:view.get_attachments_view()">
+
+    <!-- Attachments Viewlet -->
+    <div class="panel-body"
+         tal:define="attachment_types attachments_view/get_attachment_types;
+                     services view/get_services;
+                     analyses view/get_analyses;">
+
+      <!-- Add Attachments -->
+      <div class="ws_attachments_add">
+
+        <!-- Add Form -->
+        <form action="attachments_view"
+              name="attachments_add_form"
+              enctype="multipart/form-data"
+              tal:attributes="action string:${context/absolute_url}/@@attachments_view/add_to_ws"
+              method="POST">
+
+          <input type="hidden" name="submitted" value="1"/>
+          <span tal:replace="structure context/@@authenticator/authenticator"/>
+
+          <table>
+            <tr>
+              <th class="pr-3" i18n:translate="">Add new Attachment</th>
+              <th class="pr-3" i18n:translate="">Type</th>
+              <th class="pr-3" i18n:translate="">Analysis</th>
+              <th class="pr-3" i18n:translate="">All Analyses of Service</th>
+              <th class="pr-3" i18n:translate="">Keywords</th>
+            </tr>
+            <tr>
+              <td>
+                <div class="form-group">
+                  <!-- Attachment File Upload -->
+                  <input type="file" name="AttachmentFile_file"
+                         onchange="string:document.getElementById('addARButton').disabled=false"/>
+                </div>
+              </td>
+              <td>
+                <div class="form-group">
+                  <select class="form-control" name="AttachmentType">
+                    <option tal:repeat="item attachment_types"
+                            tal:attributes="value item/UID;"
+                            tal:content="item/Title"/>
+                  </select>
+                </div>
+              </td>
+              <td>
+                <tal:analyses>
+                  <div class="form-group">
+                    <select class="form-control" name="Analysis" id="Analysis">
+                      <option value=""/>
+                      <option tal:repeat="analysis analyses"
+                              tal:attributes="value analysis/uid;"
+                              tal:content="analysis/title"/>
+                    </select>
+                  </div>
+                </tal:analyses>
+              </td>
+              <td>
+                <div class="form-group">
+                  <select class="form-control" name="Service" id="Service">
+                    <option value=""/>
+                    <option tal:repeat="service services"
+                            tal:attributes="value service/uid;"
+                            tal:content="service/title"/>
+                  </select>
+                </div>
+              </td>
+              <td>
+                <div class="form-group">
+                  <input class="form-control" name="AttachmentKeys"/>
+                </div>
+              </td>
+            </tr>
+          </table>
+          <!-- Add Attachment Button -->
+          <input disabled
+                 class="context btn btn-secondary"
+                 id="addARButton"
+                 type="submit"
+                 name="addWSAttachment"
+                 value="Add"
+                 i18n:attributes="value"/>
+        </form> <!-- /Add Attachment Form -->
+      </div>
+    </div>
+  </div> <!-- Collapsible content -->
+</div>

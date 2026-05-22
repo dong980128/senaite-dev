@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <genericsetup:upgradeStep
+      title="Upgrade SENAITE APP LISTING"
+      description="Version 2.6.0"
+      source="2501"
+      destination="2600"
+      handler="senaite.app.listing.upgrades.handlers.to_2600"
+      profile="senaite.app.listing:default" />
+
+  <genericsetup:upgradeStep
+      title="Upgrade SENAITE APP LISTING"
+      description="Version 2.5.0"
+      source="2500"
+      destination="2501"
+      handler="senaite.app.listing.upgrades.handlers.to_2500"
+      profile="senaite.app.listing:default" />
+
+  <genericsetup:upgradeStep
+      title="Upgrade SENAITE APP LISTING"
+      description="Version 2.5.0"
+      source="2400"
+      destination="2500"
+      handler="senaite.app.listing.upgrades.handlers.to_2500"
+      profile="senaite.app.listing:default" />
+
+  <genericsetup:upgradeStep
+      title="Upgrade SENAITE APP LISTING"
+      description="Version 2.4.0"
+      source="2300"
+      destination="2400"
+      handler="senaite.app.listing.upgrades.handlers.to_2400"
+      profile="senaite.app.listing:default" />
+
+  <genericsetup:upgradeStep
+      title="Upgrade SENAITE APP LISTING"
+      description="Version 2.3.0"
+      source="*"
+      destination="2300"
+      handler="senaite.app.listing.upgrades.handlers.to_2300"
+      profile="senaite.app.listing:default" />
+
+</configure>

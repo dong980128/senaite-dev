@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<object name="portal_types" meta_type="Plone Types Tool">
+    <property name="title">Controls available content types in senaite</property>
+
+    <!-- SENAITE Setup -->
+    <object name="Setup" meta_type="Dexterity FTI"/>
+
+    <!-- Analysis Profiles -->
+    <object name="AnalysisProfile" meta_type="Dexterity FTI"/>
+    <object name="AnalysisProfiles" meta_type="Dexterity FTI"/>
+
+    <!-- Attachment Types -->
+    <object name="AttachmentType" meta_type="Dexterity FTI"/>
+    <object name="AttachmentTypes" meta_type="Dexterity FTI"/>
+
+    <!-- Departments -->
+    <object name="Department" meta_type="Dexterity FTI"/>
+    <object name="Departments" meta_type="Dexterity FTI"/>
+
+    <!-- Samples -->
+    <object name="Samples" meta_type="Dexterity FTI"/>
+
+    <!-- Instrument Locations -->
+    <object name="InstrumentLocation" meta_type="Dexterity FTI"/>
+    <object name="InstrumentLocations" meta_type="Dexterity FTI"/>
+
+    <!-- Interpretation Templates -->
+    <object name="InterpretationTemplate" meta_type="Dexterity FTI"/>
+    <object name="InterpretationTemplates" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Conditions -->
+    <object name="SampleCondition" meta_type="Dexterity FTI"/>
+    <object name="SampleConditions" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Containers -->
+    <object name="SampleContainer" meta_type="Dexterity FTI"/>
+    <object name="SampleContainers" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Matrices -->
+    <object name="SampleMatrix" meta_type="Dexterity FTI"/>
+    <object name="SampleMatrices" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Points -->
+    <object name="SamplePoint" meta_type="Dexterity FTI"/>
+    <object name="SamplePoints" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Preservations -->
+    <object name="SamplePreservation" meta_type="Dexterity FTI"/>
+    <object name="SamplePreservations" meta_type="Dexterity FTI"/>
+
+    <!-- Sample Templates -->
+    <object name="SampleTemplate" meta_type="Dexterity FTI"/>
+    <object name="SampleTemplates" meta_type="Dexterity FTI"/>
+
+    <!-- Labels -->
+    <object name="Label" meta_type="Dexterity FTI"/>
+    <object name="Labels" meta_type="Dexterity FTI"/>
+
+    <!-- Manufacturers -->
+    <object name="Manufacturer" meta_type="Dexterity FTI"/>
+    <object name="Manufacturers" meta_type="Dexterity FTI"/>
+
+    <!-- Container types -->
+    <object name="ContainerType" meta_type="Dexterity FTI"/>
+    <object name="ContainerTypes" meta_type="Dexterity FTI"/>
+
+    <!-- SubGroups -->
+    <object name="SubGroup" meta_type="Dexterity FTI"/>
+    <object name="SubGroups" meta_type="Dexterity FTI"/>
+
+    <!-- Storage Locations -->
+    <object name="StorageLocation" meta_type="Dexterity FTI"/>
+    <object name="StorageLocations" meta_type="Dexterity FTI"/>
+
+    <!-- Instrument Types -->
+    <object name="InstrumentType" meta_type="Dexterity FTI"/>
+    <object name="InstrumentTypes" meta_type="Dexterity FTI"/>
+
+    <!-- Sampling Deviations -->
+    <object name="SamplingDeviation" meta_type="Dexterity FTI"/>
+    <object name="SamplingDeviations" meta_type="Dexterity FTI"/>
+
+    <!-- Batch Labels -->
+    <object name="BatchLabel" meta_type="Dexterity FTI"/>
+    <object name="BatchLabels" meta_type="Dexterity FTI"/>
+
+    <!-- Analysis Categories -->
+    <object name="AnalysisCategory" meta_type="Dexterity FTI"/>
+    <object name="AnalysisCategories" meta_type="Dexterity FTI"/>
+
+    <!-- Dynamic Analysis specifications -->
+    <object name="DynamicAnalysisSpec" meta_type="Dexterity FTI"/>
+    <object name="DynamicAnalysisSpecs" meta_type="Dexterity FTI"/>
+
+    <!-- Lab Products -->
+    <object name="LabProduct" meta_type="Dexterity FTI"/>
+    <object name="LabProducts" meta_type="Dexterity FTI"/>
+
+    <!-- Suppliers -->
+    <object name="Supplier" meta_type="Dexterity FTI"/>
+    <object name="Suppliers" meta_type="Dexterity FTI"/>
+
+    <!-- Sample types -->
+    <object name="SampleType" meta_type="Dexterity FTI"/>
+    <object name="SampleTypes" meta_type="Dexterity FTI"/>
+
+    <!-- Worksheet Templates -->
+    <object name="WorksheetTemplate" meta_type="Dexterity FTI"/>
+    <object name="WorksheetTemplates" meta_type="Dexterity FTI"/>
+
+    <!-- Projects section -->
+    <object name="Projects" meta_type="Dexterity FTI"/>
+
+    <object name="MySQL" meta_type="Dexterity FTI"/>
+
+    <object name="ServiceSample" meta_type="Dexterity FTI"/>
+
+    <object name="Subjects" meta_type="Dexterity FTI"/>
+
+    <object name="LabProcess" meta_type="Dexterity FTI"/>
+    <object name="LabTask" meta_type="Dexterity FTI"/>
+
+    <object name="LabProcessRun" meta_type="Dexterity FTI"/>
+    <object name="LabTaskRun" meta_type="Dexterity FTI"/>
+
+</object>

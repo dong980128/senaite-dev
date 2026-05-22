@@ -1,0 +1,37 @@
+<metal:use-macro use-macro="context/main_template/macros/master">
+  <metal:content fill-slot="content-core">
+
+    <h1 tal:content="view/title">样本明细（占位页）</h1>
+
+    <p class="discreet">
+      这是新建的明细页面。现在不接收任何参数；后面再加筛选即可。
+    </p>
+
+    <table class="listing table table-bordered table-responsive"
+           style="width:100%; table-layout:fixed;">
+      <thead>
+        <tr>
+          <th style="width:25%;">样品编号</th>
+          <th style="width:20%;">中心编码</th>
+          <th style="width:20%;">状态</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tal:rows repeat="row view/demo_rows">
+          <tr>
+            <td tal:content="row/sample_id">AR0001</td>
+            <td tal:content="row/center_code">01</td>
+            <td tal:content="row/status">received</td>
+            <td>（演示数据）</td>
+          </tr>
+        </tal:rows>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem;">
+      <a tal:attributes="href context/absolute_url">返回当前位置</a>
+    </p>
+
+  </metal:content>
+</metal:use-macro>

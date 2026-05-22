@@ -1,0 +1,243 @@
+<metal:use-macro use-macro="context/main_template/macros/master">
+    <metal:content fill-slot="content-core">
+
+        <style>
+            /* ============ 主表：占满容器 & 卡片化 ============ */
+            /* 关键：强制表格本体为 table，避免主题把 .listing 设成 block */
+            #projects-by-name {
+                display: table !important;
+                width: 100% !important;
+                table-layout: fixed;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: #fff;
+                border-radius: 10px;
+                overflow: visible !important; /* 覆盖主题里可能的 overflow-x:auto */
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+            }
+
+            /* 主表列宽：项目名称 / 中心数量 / 样本总数量 */
+            #projects-by-name col.col-pname {
+                width: 48%;
+            }
+
+            #projects-by-name col.col-centers {
+                width: 26%;
+            }
+
+            #projects-by-name col.col-total {
+                width: 26%;
+            }
+
+            #projects-by-name thead th {
+                padding: 12px 16px;
+                background: #f5f7fb;
+                color: #334155;
+                font-weight: 600;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            #projects-by-name tbody td {
+                padding: 12px 16px;
+                border-bottom: 1px solid #eef2f7;
+                vertical-align: middle;
+            }
+
+            #projects-by-name tbody tr:hover > td {
+                background: #f9fafb;
+            }
+
+            /* 数字列居中（第2/3列） */
+            #projects-by-name tbody td:nth-child(2),
+            #projects-by-name tbody td:nth-child(3) {
+                text-align: center;
+            }
+
+            /* 展开链接样式 */
+            #projects-by-name a.toggle-centers {
+                color: #0ea5e9;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+            #projects-by-name a.toggle-centers:hover {
+                text-decoration: underline;
+            }
+
+            /* ============ 子表展开行（保持 <tr> 布局） ============ */
+            #projects-by-name .centers-row {
+                display: none;
+            }
+
+            #projects-by-name .centers-row.open {
+                display: table-row;
+            }
+
+            #projects-by-name .centers-row > td {
+                padding: 0 !important;
+                background: #f8fafc;
+                border-top: 0;
+            }
+
+            /* 动画加在内部容器上，而不是 <tr> 本身 */
+            #projects-by-name .centers-holder {
+                padding: 0 16px 0; /* padding 在展开时一起出现 */
+                overflow: hidden;
+                max-height: 0;
+                transition: max-height .18s ease, padding .18s ease, opacity .18s ease;
+                opacity: .2;
+            }
+
+            #projects-by-name .centers-row.open .centers-holder {
+                max-height: 1000px; /* 够用即可 */
+                padding: 12px 16px 16px;
+                opacity: 1;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                #projects-by-name .centers-holder {
+                    transition: none;
+                }
+            }
+
+            /* 子表本身做成“内卡片” */
+            #projects-by-name .centers-holder table {
+                display: table !important;
+                width: 100%;
+                table-layout: fixed;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: #fff;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            #projects-by-name .centers-holder thead th {
+                background: #f1f5f9;
+                color: #334155;
+                border-bottom: 1px solid #e5e7eb;
+                padding: 10px 12px;
+            }
+
+            #projects-by-name .centers-holder tbody td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #eef2f7;
+            }
+
+            #projects-by-name .centers-holder tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+            /* 子表列宽：中心名称 64% / 编号 18% / 数量 18% */
+            #projects-by-name .centers-holder table :is(th,td):nth-child(1) {
+                width: 64%;
+                word-break: break-word;
+            }
+
+            #projects-by-name .centers-holder table :is(th,td):nth-child(2) {
+                width: 18%;
+                text-align: center;
+            }
+
+            #projects-by-name .centers-holder table :is(th,td):nth-child(3) {
+                width: 18%;
+                text-align: center;
+            }
+
+            /* 小屏兜底：允许横向滚动避免挤压（只对子表生效；主表已有 fixed） */
+            @media (max-width: 992px) {
+                #projects-by-name .centers-holder table {
+                    display: block !important;
+                    table-layout: auto;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                }
+            }
+        </style>
+
+        <table class="listing" id="projects-by-name">
+            <colgroup>
+                <col class="col-pname"/>
+                <col class="col-centers"/>
+                <col class="col-total"/>
+            </colgroup>
+            <thead>
+            <tr>
+                <th>项目名称</th>
+                <th>中心数量</th>
+                <th>样本总数量</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tal:rows repeat="row view/rows">
+                <tr>
+                    <td class="col-project">
+                        <a tal:attributes="href python:view.project_total_href(row['pname'])"
+                                 tal:content="row/pname">项目名</a>
+                    </td>
+
+                    <td>
+                        <a href="#"
+                           class="toggle-centers"
+                                 tal:attributes="data-name row/pname">
+                            <tal:block replace="row/centers">0</tal:block>
+                        </a>
+                    </td>
+
+                    <td class="col-total">
+                        <a tal:attributes="href python:view.project_total_href(row['pname'])"
+                                 tal:content="row/total">0</a>
+                    </td>
+                </tr>
+                <tr class="centers-row">
+                    <td colspan="3">
+                        <div class="centers-holder"><em>加载中...</em></div>
+                    </td>
+                </tr>
+            </tal:rows>
+            </tbody>
+        </table>
+
+        <script type="text/javascript">
+            (function ($) {
+                function centersURL() {
+                    // 与 ZCML 注册的 view 名一致
+                    return window.location.href.replace(/\/$/, '') + '/project-centers';
+                }
+
+                function loadCenters($tr, name) {
+                    var $holder = $tr.next('.centers-row').find('.centers-holder');
+                    $holder.html('<em>加载中...</em>');
+                    $.get(centersURL(), {name: name})
+                            .done(function (html) {
+                                $holder.html(html);
+                            })
+                            .fail(function () {
+                                $holder.html('<div class="portalMessage error">载入失败</div>');
+                            });
+                }
+
+                // 首次渲染：展开行默认关闭（无动画的“收起”状态）
+                $('#projects-by-name .centers-row').removeClass('open');
+
+                // 点击切换：不对 <tr> 做动画，仅切换 .open，让 CSS 来处理动画
+                $(document).on('click', '#projects-by-name a.toggle-centers', function (e) {
+                    e.preventDefault();
+                    var $link = $(this);
+                    var $tr = $link.closest('tr');
+                    var $detail = $tr.next('.centers-row');
+                    var opening = !$detail.hasClass('open');
+
+                    $detail.toggleClass('open');
+
+                    if (opening && !$detail.data('loaded')) {
+                        loadCenters($tr, $link.data('name'));
+                        $detail.data('loaded', true);
+                    }
+                });
+            })(jQuery);
+        </script>
+
+    </metal:content>
+</metal:use-macro>

@@ -1,0 +1,478 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="senaite.core">
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Update registry settings"
+      description="Import samples registry"
+      source="2657"
+      destination="2658"
+      handler=".v02_06_000.import_registry"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Update registry settings"
+      description="Import additional catalog mappings registry"
+      source="2656"
+      destination="2657"
+      handler=".v02_06_000.import_registry"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix subgroups not sorted by sort key"
+      description="Reindex sortable_title for all sub groups"
+      source="2655"
+      destination="2656"
+      handler=".v02_06_000.reindex_sub_groups"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix sampletype-related indexes for specs"
+      description="SampleType-specific indexes Analysis Specs are not indexed"
+      source="2654"
+      destination="2655"
+      handler=".v02_06_000.reindex_specs"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Reindex getDueDate"
+      description="Reindex getDueDate from analyses and sample catalogs"
+      source="2653"
+      destination="2654"
+      handler=".v02_06_000.reindex_getDueDate"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate WorksheetTemplates to DX"
+      description="Migrate WorksheetTemplates to Dexterity"
+      source="2652"
+      destination="2653"
+      handler=".v02_06_000.migrate_worksheettemplates_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove deactivated services from profiles"
+      description="Removes deactivated analysis services from Profiles"
+      source="2651"
+      destination="2652"
+      handler=".v02_06_000.remove_inactive_services_from_profiles"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix categories not sorted by sort key"
+      description="Reindex sortable_title for all analysis categories"
+      source="2650"
+      destination="2651"
+      handler=".v02_06_000.reindex_analysis_categories"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix corrupted transitions"
+      description="Restores the value of the property `after_script_name` from
+        transitions that were created or updated with the core's workflow api"
+      source="2649"
+      destination="2650"
+      handler=".v02_06_000.fix_corrupted_transitions"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove isSampleReceived index"
+      description="Remove isSampleReceived index"
+      source="2648"
+      destination="2649"
+      handler=".v02_06_000.remove_is_sample_received_index"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Ensure valid sticker templates"
+      description="Ensure migrated sample types have valid sticker templates set"
+      source="2647"
+      destination="2648"
+      handler=".v02_06_000.ensure_valid_sticker_templates"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Move SampleType to Senaite setup"
+      description="Migrate Sample Types to Senaite setup"
+      source="2646"
+      destination="2647"
+      handler=".v02_06_000.migrate_sampletypes_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove Analyses raw attribute from samples"
+      description="Remove Analyses raw attribute from samples"
+      source="2645"
+      destination="2646"
+      handler=".v02_06_000.del_raw_analyses"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Store analyses UIDs as raw data in samples"
+      description="Store analyses UIDs as raw data in samples"
+      source="2644"
+      destination="2645"
+      handler=".v02_06_000.store_raw_analyses"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove CreationDate index"
+      description="Remove CreationDate index"
+      source="2643"
+      destination="2644"
+      handler=".v02_06_000.remove_creation_date_index"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Suppliers to DX"
+      description="Migrate Suppliers to Dexterity"
+      source="2642"
+      destination="2643"
+      handler=".v02_06_000.migrate_suppliers_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate LabProducts to DX"
+      description="Migrate LabProducts to Dexterity"
+      source="2641"
+      destination="2642"
+      handler=".v02_06_000.migrate_labproducts_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Move Interpretation Templates to Senaite setup"
+      description="Move Interpretation Templates to Senaite setup"
+      source="2640"
+      destination="2641"
+      handler=".v02_06_000.move_interpretationtemplates"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Move Dynamic Analysis Specs to Senaite core"
+      description="Move Dynamic Analysis Specs to Senaite core"
+      source="2639"
+      destination="2640"
+      handler=".v02_06_000.move_dynamicanalysisspecs"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate AttachmentTypes to DX"
+      description="Migrate AttachmentTypes to Dexterity"
+      source="2638"
+      destination="2639"
+      handler=".v02_06_000.migrate_attachmenttypes_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Move Sample Containers to Senaite setup"
+      description="Move Sample Containers to Senaite setup"
+      source="2637"
+      destination="2638"
+      handler=".v02_06_000.move_samplecontainers"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Move Instrument Locations to Senaite setup"
+      description="Move Instrument Locations to Senaite setup"
+      source="2636"
+      destination="2637"
+      handler=".v02_06_000.move_instrumentlocations"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix setup folders not indexed in UID catalog"
+      description="Adds the Plone's IReferenceable behavior to setup folders"
+      source="2635"
+      destination="2636"
+      handler=".v02_06_000.set_referenceable_behavior"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove getCategoryTitle from catalogs"
+      description="Remove getCategoryTitle from catalogs"
+      source="2634"
+      destination="2635"
+      handler=".v02_06_000.remove_category_title_metadata"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate AnalysisCategories to DX"
+      description="Migrate AnalysisCategories to Dexterity"
+      source="2633"
+      destination="2634"
+      handler=".v02_06_000.migrate_analysiscategories_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate BatchLabels to DX"
+      description="Migrate BatchLabels to Dexterity"
+      source="2632"
+      destination="2633"
+      handler=".v02_06_000.migrate_batchlabels_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate SamplePoint coordinates"
+      description="Migrate SamplePoint coordinates to GPS coordinates"
+      source="2631"
+      destination="2632"
+      handler=".v02_06_000.migrate_samplepoints_coordinates"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Sampling Deviations to DX"
+      description="Migrate Sampling Deviations to Dexterity"
+      source="2630"
+      destination="2631"
+      handler=".v02_06_000.migrate_samplingdeviations_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Instrument Types to DX"
+      description="Migrate Instrument Types to Dexterity"
+      source="2629"
+      destination="2630"
+      handler=".v02_06_000.migrate_instrumenttypes_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate StorageLocations to DX"
+      description="Migrate StorageLocations to Dexterity"
+      source="2628"
+      destination="2629"
+      handler=".v02_06_000.migrate_storagelocations_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Update SubGroups typeinfo (fix)"
+      description="Update SubGroups typeinfo (fix)"
+      source="2627"
+      destination="2628"
+      handler=".v02_06_000.update_typeinfo_subgroups_fix"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate SubGroups to DX"
+      description="Migrate SubGroups to Dexterity"
+      source="2626"
+      destination="2627"
+      handler=".v02_06_000.migrate_subgroups_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove contact metadata from sample catalog"
+      description="Remove contact metadata from sample catalog"
+      source="2625"
+      destination="2626"
+      handler=".v02_06_000.remove_contact_metadata"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove getSamplerFullName from catalogs"
+      description="Remove getSamplerFullName from catalogs"
+      source="2624"
+      destination="2625"
+      handler=".v02_06_000.remove_sampler_fullname"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate ContainerTypes to DX"
+      description="Migrate ContainerTypes to Dexterity"
+      source="2623"
+      destination="2624"
+      handler=".v02_06_000.migrate_containertypes_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Manufacturers to DX"
+      description="Migrate Manufacturers to Dexterity"
+      source="2622"
+      destination="2623"
+      handler=".v02_06_000.migrate_manufacturers_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove getCreatorFullName from catalogs"
+      description="Remove getCreatorFullName from catalogs"
+      source="2621"
+      destination="2622"
+      handler=".v02_06_000.remove_creator_fullname"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Add user profile"
+      description="Add profile link to the user dropdown menu"
+      source="2620"
+      destination="2621"
+      handler=".v02_06_000.setup_user_profile"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate SamplePoints to DX"
+      description="Migrate SamplePoints to Dexterity"
+      source="2619"
+      destination="2620"
+      handler=".v02_06_000.migrate_samplepoints_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Text (multi-lines) support for results"
+      description="Updates the value for ResultType from all analyses"
+      source="2618"
+      destination="2619"
+      handler=".v02_06_000.setup_result_types"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix sample points not filtered by sample type"
+      description="Sample points are not filtered by sample type in add sample"
+      source="2617"
+      destination="2618"
+      handler=".v02_06_000.reindex_sampletype_uid"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Sample Templates to DX"
+      description="Migrate Sample Templates to Dexterity"
+      source="2616"
+      destination="2617"
+      handler=".v02_06_000.migrate_sampletemplates_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Add getGroupId metadata in client_catalog"
+      description="Add getGroupId metadata column in client_catalog"
+      source="2615"
+      destination="2616"
+      handler=".v02_06_000.setup_client_catalog"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Update registry settings"
+      description="Import worksheet printing templates registry"
+      source="2614"
+      destination="2615"
+      handler=".v02_06_000.import_registry"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Import registry settings"
+      description="Import generic setup settings to SENAITE registry"
+      source="2613"
+      destination="2614"
+      handler=".v02_06_000.import_registry"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Re-index sampletype_uid index"
+      description="Re-index sampletype_uid index"
+      source="2612"
+      destination="2613"
+      handler=".v02_06_000.reindex_sampletype_uid"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Client located Analysis Profiles to DX"
+      description="Supplementary upgrade step for 2608"
+      source="2611"
+      destination="2612"
+      handler=".v02_06_000.migrate_client_located_analysisprofiles_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate SampleMatrices to DX"
+      description="Migrate SampleMatrices to Dexterity"
+      source="2610"
+      destination="2611"
+      handler=".v02_06_000.migrate_samplematrices_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Cleanup UID catalog and orphane objects"
+      description="Cleanup duplicate and orphane catalog entries and objects"
+      source="2609"
+      destination="2610"
+      handler=".v02_06_000.cleanup_uid_catalog"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Add path index to UID catalog"
+      description="Add extendend path index to UID catalog"
+      source="2608"
+      destination="2609"
+      handler=".v02_06_000.add_path_index_to_uid_catalog"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Analysis Profiles to DX"
+      description="Migrate Analysis Profiles to Dexterity"
+      source="2607"
+      destination="2608"
+      handler=".v02_06_000.migrate_analysisprofiles_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Preservations to DX"
+      description="Migrate Preservations to Dexterity"
+      source="2606"
+      destination="2607"
+      handler=".v02_06_000.migrate_preservations_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove old AT from AT's factory tool"
+      description="Remove old AT types from factory tool"
+      source="2605"
+      destination="2606"
+      handler=".v02_06_000.remove_at_portal_types"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove auditlog and snapshots from setup folders"
+      description="Remove auditlog and snapshots from setup folders"
+      source="2604"
+      destination="2605"
+      handler=".v02_06_000.remove_folders_snapshots"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate SampleConditions to DX"
+      description="Migrate SampleConditions to Dexterity"
+      source="2603"
+      destination="2604"
+      handler=".v02_06_000.migrate_sampleconditions_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Remove old AT Departments folder"
+      description="Remove AT based setup folder"
+      source="2602"
+      destination="2603"
+      handler=".v02_06_000.remove_at_departments_setup_folder"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Migrate Departments to DX"
+      description="Migrate Departments to Dexterity and move below new SENAITE Setup Folder"
+      source="2601"
+      destination="2602"
+      handler=".v02_06_000.migrate_departments_to_dx"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="SENAITE.CORE 2.6.0: Fix Reject permission for Analysis"
+      description="Fix Reject permission for Analysis"
+      source="2600"
+      destination="2601"
+      handler=".v02_06_000.fix_analysis_reject_permission"
+      profile="senaite.core:default"/>
+
+  <genericsetup:upgradeStep
+      title="Upgrade to SENAITE.CORE 2.6.0"
+      source="2525"
+      destination="2600"
+      handler=".v02_06_000.upgrade"
+      profile="senaite.core:default"/>
+
+</configure>

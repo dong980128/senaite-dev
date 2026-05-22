@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="ServiceSample" meta_type="Dexterity FTI"
+        i18n:domain="senaite.core"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title" i18n:translate="">ServiceSample</property>
+
+  <!-- 可以当容器，也可换成 Item；保持和 Projects一致即可 -->
+  <property name="klass">plone.dexterity.content.Container</property>
+  <property name="schema">plone.supermodel.model.Schema</property>
+
+  <!-- 允许在任意位置添加 -->
+  <property name="global_allow">True</property>
+
+  <!-- 关键：把默认视图设为指定页面名 -->
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="service-samples"/>
+  </property>
+
+  <property name="default_view">service-samples</property>
+  <property name="immediate_view">view</property>
+
+  <!-- 图标随意 -->
+  <property name="icon_expr">senaite_theme/icon/labels</property>
+
+</object>

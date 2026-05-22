@@ -1,0 +1,57 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:browser="http://namespaces.zope.org/browser"
+           i18n_domain="senaite.core">
+
+    <browser:page
+        name="projects-by-name"
+        for="*"
+        class=".ProjectsByNameView"
+        template="templates/projects_by_name.pt"
+        permission="zope2.View" />
+
+    <browser:page
+        name="project-centers"
+        for="*"
+        class=".ProjectCentersView"
+        permission="zope2.View" />
+
+    <browser:page
+        for="*"
+        name="project-center-samples"
+        class=".ProjectCenterSamplesView"
+        permission="zope2.View"
+    />
+
+  <browser:page
+      name="project_center_samples"
+      for="*"
+      class="senaite.core.browser.projects.project_center_samples.ProjectCenterSamplesView"
+      permission="zope2.View"
+      template="templates/project_center_sample.pt" />
+
+  <browser:page
+      name="project_center_samples"
+      for="plone.dexterity.interfaces.IDexterityContainer"
+      class="senaite.core.browser.projects.project_center_samples.ProjectCenterSamplesView"
+      template="templates/project_center_sample.pt"
+      permission="zope2.View"
+  />
+
+    <browser:page
+        name="project_center_samples_filter"
+        for="*"
+        class="senaite.core.browser.projects.project_center_samples_filter.ProjectCenterSamplesFilterListingView"
+        permission="zope2.View"
+    />
+
+    <!--<browser:viewlet
+        name="senaite.core.viewlet.add_samples"
+        for="*"
+        view=".projects.ProjectCenterSamplesView"
+        manager="senaite.core.browser.viewlets.interfaces.IListingTableTitle"
+        class="senaite.core.browser.viewlets.add_samples.AddSamplesViewlet"
+        template="templates/empty.pt"
+        permission="zope2.View"
+    />-->
+
+</configure>

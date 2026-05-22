@@ -1,0 +1,427 @@
+<metal:page xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core">
+
+    <metal:module metal:define-macro="module">
+
+        <tal:utf8 tal:condition="python:request.RESPONSE.setHeader('Content-Type','text/html;charset=utf-8')" />
+        <div id="HLATypeV1" class="hlat-wrap">
+
+            <!-- 顶部工具条（图1风格） -->
+            <div class="hlat-card">
+                <div class="hlat-toolbar">
+
+                    <!-- 左侧：3个筛选 -->
+                    <div class="hlat-controls">
+                        <div class="hlat-field">
+                            <div class="hlat-label">Select Source</div>
+                            <select id="fClinical" class="hlat-select">
+                                <option value="">请选择</option>
+                                <option value="G5">G5</option>
+                                <option value="BCPBMC">BCPBMC</option>
+                            </select>
+                        </div>
+
+                        <div class="hlat-field">
+                            <div class="hlat-label">Select Tumor Type</div>
+                            <select id="fTumorType" class="hlat-select">
+                                <option value="">请选择</option>
+                            </select>
+                        </div>
+
+                        <div class="hlat-field">
+                            <div class="hlat-label">Select Nationality</div>
+                            <select id="fPopulation" class="hlat-select">
+                                <option value="">请选择</option>
+                            </select>
+                        </div>
+
+                        <!-- 右侧：操作区（Search / Reset / 可选下拉占位，保持与图1布局一致） -->
+                        <div class="hlat-actions" style="justify-self:end;">
+                            <button id="btnSearch" class="btn primary">🔍 Search</button>
+                            <button id="btnReset" class="btn ghost">↻ Reset</button>
+                            <select id="fExtra" class="hlat-select" style="width:180px;">
+                                <option value="">Select Button</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 第二行：locus 勾选 -->
+                    <div class="hlat-checks">
+                        <label class="pill"><input type="checkbox" value="A" checked/> A</label>
+                        <label class="pill"><input type="checkbox" value="B" checked/> B</label>
+                        <label class="pill"><input type="checkbox" value="C" checked/> C</label>
+                        <label class="pill"><input type="checkbox" value="DRB1"/> DRB1</label>
+                        <label class="pill"><input type="checkbox" value="DQB1"/> DQB1</label>
+                        <label class="pill"><input type="checkbox" value="DPB1"/> DPB1</label>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 图表：左圆环，右组合柱 -->
+            <div class="hlat-card">
+                <div class="hlat-charts">
+                    <div class="hlat-box">
+                        <div class="title">Top combinations (Donut)</div>
+                        <div id="pie"></div>
+                    </div>
+                    <div class="hlat-box">
+                        <div class="title" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span>View all data</span>
+                            <select id="fTopN" class="hlat-select" style="width:120px;">
+                                <option value="15">Top 15</option>
+                                <option value="30" selected>Top 30</option>
+                                <option value="40">Top 40</option>
+                                <option value="50">Top 50</option>
+                            </select>
+                        </div>
+                        <div id="bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style type="text/css">
+            :root {
+                --bg: #f5f7fb;
+                --card: #fff;
+                --text: #1f2328;
+                --sub: #6a737d;
+                --border: #e5e7eb;
+                --brand: #3b82f6;
+                --h-pie: 360px;
+                --h-bar: 360px;
+                --maxw: 1360px;
+            }
+
+            .hlat-wrap {
+                background: var(--bg);
+                padding: 0 10px 14px;
+            }
+
+            .hlat-card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+                margin: 12px auto;
+                max-width: var(--maxw);
+            }
+
+            .hlat-toolbar {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 12px;
+                align-items: center;
+            }
+
+            .hlat-controls {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(220px, 1fr)) auto;
+                gap: 12px;
+                align-items: center;
+            }
+
+            .hlat-field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .hlat-label {
+                font-size: 12px;
+                color: var(--sub);
+            }
+
+            .hlat-select {
+                height: 36px;
+                padding: 6px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #fff;
+            }
+
+            .hlat-checks {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            .pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 10px;
+                border: 1px solid var(--brand);
+                color: var(--brand);
+                background: #fff;
+                border-radius: 10px;
+                font-size: 12px;
+            }
+
+            .pill input {
+                width: 16px;
+                height: 16px;
+            }
+
+            .hlat-actions {
+                display: flex;
+                gap: 10px;
+            }
+
+            .btn {
+                height: 36px;
+                padding: 0 14px;
+                border: 1px solid var(--brand);
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            .btn.primary {
+                background: var(--brand);
+                color: #fff;
+            }
+
+            .btn.ghost {
+                background: #fff;
+                color: var(--brand);
+            }
+
+            .hlat-charts {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr;
+                gap: 16px;
+            }
+
+            .hlat-box {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+            }
+
+            .hlat-box .title {
+                padding: 10px 12px;
+                font-size: 14px;
+                color: var(--brand);
+            }
+
+            #pie {
+                height: var(--h-pie);
+            }
+
+            #bar {
+                height: var(--h-bar);
+            }
+
+            @media (max-width: 980px) {
+                .hlat-controls {
+                    grid-template-columns: 1fr;
+                }
+
+                .hlat-charts {
+                    grid-template-columns: 1fr;
+                }
+
+                :root {
+                    --h-pie: 300px;
+                    --h-bar: 320px;
+                }
+            }
+        </style>
+
+        <script type="text/javascript">
+            (function () {
+                var $root = document.getElementById('HLATypeV1');
+                if (!$root) return;
+
+                var elClinical = $root.querySelector('#fClinical');
+                var elTumorType = $root.querySelector('#fTumorType');
+                var elPopulation = $root.querySelector('#fPopulation');
+                var elTopN = $root.querySelector('#fTopN');
+                var elChecks = $root.querySelectorAll('.hlat-checks input[type="checkbox"]');
+                var btnSearch = $root.querySelector('#btnSearch');
+                var btnReset = $root.querySelector('#btnReset');
+
+                function esc(s) {
+                    return (s || '').replace(/[&<>"']/g, function (m) {
+                        return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m]);
+                    });
+                }
+
+                function qs(obj) {
+                    return Object.keys(obj).filter(function (k) {
+                        return obj[k] !== undefined && obj[k] !== null && obj[k] !== '';
+                    })
+                            .map(function (k) {
+                                var v = obj[k];
+                                if (Array.isArray(v)) return v.map(function (x) {
+                                    return encodeURIComponent(k) + '=' + encodeURIComponent(x);
+                                }).join('&');
+                                return encodeURIComponent(k) + '=' + encodeURIComponent(v);
+                            }).join('&');
+                }
+
+                function fetchJSON(url, params) {
+                    var u = url + (params ? ('?' + qs(params)) : '');
+                    return fetch(u, {credentials: 'include'}).then(function (r) {
+                        return r.json();
+                    });
+                }
+
+                function setOptions(select, list, withBlank) {
+                    var cur = select.value, html = withBlank ? '<option value=""></option>' : '';
+                    (list || []).forEach(function (v) {
+                        var t = esc(String(v || ''));
+                        html += '<option value="' + t + '">' + t + '</option>';
+                    });
+                    select.innerHTML = html;
+                    if (cur && Array.from(select.options).some(function (o) {
+                        return o.value === cur;
+                    })) select.value = cur;
+                }
+
+                function getLocus() {
+                    return Array.from(elChecks).filter(function (i) {
+                        return i.checked;
+                    }).map(function (i) {
+                        return i.value;
+                    });
+                }
+
+                // 初始化图表
+                var pie = echarts.init(document.getElementById('pie'));
+                var bar = echarts.init(document.getElementById('bar'));
+
+                function renderPie(items) {
+                    // items: [{name, value}] —— 使用“组合”Top N
+                    pie.setOption({
+                        tooltip: {trigger: 'item', formatter: '{b}<br/>{c}% ({d}%)'},
+                        legend: {top: 4, left: 'center'},
+                        series: [{
+                            name: 'Haplotype (Two)',
+                            type: 'pie',
+                            radius: ['55%', '78%'],
+                            center: ['50%', '58%'],
+                            avoidLabelOverlap: true,
+                            label: {
+                                show: true, formatter: function (p) {
+                                    return p.name.length > 12 ? (p.name.slice(0, 12) + '...') : p.name;
+                                }
+                            },
+                            data: (items || []).map(function (d) {
+                                return {name: d.name, value: d.value};
+                            })
+                        }]
+                    });
+                }
+
+                function renderBar(items) {
+                    bar.setOption({
+                        tooltip: {trigger: 'axis', axisPointer: {type: 'shadow'}},
+                        grid: {left: 60, right: 20, top: 20, bottom: 60},
+                        xAxis: {
+                            type: 'category',
+                            data: items.map(function (x) {
+                                return x.name;
+                            }),
+                            axisLabel: {interval: 0, rotate: items.length > 14 ? 35 : 0}
+                        },
+                        yAxis: {type: 'value', axisLabel: {formatter: '{value} %'}},
+                        series: [{
+                            type: 'bar', data: items.map(function (x) {
+                                return x.value;
+                            })
+                        }]
+                    });
+                }
+
+                function pickTopN(twoList, topN) {
+                    // 后端返回：[{ hla:'A*02:01;B*46:01;C*01:02', percentage:'xx.xx%', num:'x/size' }, ...]
+                    var arr = (twoList || []).map(function (it) {
+                        var pct = parseFloat(String(it.percentage || '0').replace('%', '')) || 0;
+                        return {name: it.hla, value: pct, num: it.num || ''};
+                    });
+                    arr.sort(function (a, b) {
+                        return b.value - a.value;
+                    });
+                    return arr.slice(0, topN);
+                }
+
+                // 载入 TumorType / Population
+                function loadTumorTypes(clinical) {
+                    return fetchJSON('@@mysql_hl_tumorType', {Clinical: clinical}).then(function (resp) {
+                        var types = (resp && resp.data && resp.data.tumrType) || [];
+                        setOptions(elTumorType, types, true);
+                    });
+                }
+
+                function loadPopulations(clinical) {
+                    return fetchJSON('@@mysql_hl_populations', {clinical: clinical}).then(function (resp) {
+                        var pops = (resp && resp.data) || [];
+                        setOptions(elPopulation, pops, true);
+                    });
+                }
+
+                // 查询：使用 HaplotypeByTwo（组合）驱动图表
+                function run() {
+                    var clinical = elClinical.value || '';
+                    var population = elPopulation.value || '';
+                    var tumorType = elTumorType.value || '';
+                    var values = getLocus();
+                    var topN = parseInt(elTopN.value || '30', 10);
+
+                    if (values.length === 0) {
+                        alert('请至少勾选一个位点（A/B/C/…）');
+                        return;
+                    }
+
+                    fetchJSON('@@mysql_hl_haplotype', {
+                        values: values, Clinical: clinical, population: population, tumorType: tumorType
+                    }).then(function (resp) {
+                        if (!resp || resp.code !== 0) throw new Error('接口返回异常');
+                        var two = (resp.data && resp.data['HaplotypeByTwo']) || [];
+                        var top = pickTopN(two, topN);
+
+                        // 左圆环：取前 6 个组合更清晰（可自行调整）
+                        renderPie(top.slice(0, 6));
+
+                        // 右柱：取所选 TopN 的组合
+                        renderBar(top);
+                    }).catch(function (e) {
+                        console.error(e);
+                        alert('查询失败：' + e.message);
+                    });
+                }
+
+                // 交互
+                elClinical.addEventListener('change', function () {
+                    Promise.all([loadPopulations(elClinical.value), loadTumorTypes(elClinical.value)]);
+                });
+                btnSearch.addEventListener('click', run);
+                btnReset.addEventListener('click', function () {
+                    elClinical.value = '';
+                    elTumorType.value = '';
+                    elPopulation.value = '';
+                    Array.from(elChecks).forEach(function (i) {
+                        i.checked = (i.value === 'A' || i.value === 'B' || i.value === 'C');
+                    });
+                    elTopN.value = '30';
+                });
+
+                // 初始：不强制默认 clinical；如果想默认 G5，可打开下行两句
+                // elClinical.value='G5';
+                // Promise.all([ loadPopulations('G5'), loadTumorTypes('G5') ]).then(run);
+
+                window.addEventListener('resize', function () {
+                    pie.resize();
+                    bar.resize();
+                });
+            })();
+        </script>
+
+    </metal:module>
+</metal:page>

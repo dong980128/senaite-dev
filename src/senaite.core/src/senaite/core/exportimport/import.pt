@@ -1,0 +1,211 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="senaite.core">
+  <body>
+
+    <metal:content-title fill-slot="content-title">
+      <h1>
+        <i class="icon icon-upload">
+          <svg tal:replace="structure senaite_theme/icon_data/upload"/>
+        </i>
+        <span i18n:translate="">Import</span>
+      </h1>
+    </metal:content-title>
+
+    <metal:content-description fill-slot="content-description">
+      <div class="documentDescription"
+           tal:content="view/description"
+           tal:condition="view/description"/>
+    </metal:content-description>
+
+    <metal:content-core fill-slot="content-core">
+
+      <form name="import"
+            class="senaite-ajax-form"
+            ajax-submit="1"
+            method="POST" enctype="multipart/form-data">
+
+        <input tal:replace="structure context/@@authenticator/authenticator"/>
+        <input type="hidden" name="submitted" value="1"/>
+        <input type="hidden" name="form_adapter_name" value="data_import_form"/>
+
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item">
+            <a href="#tab-instrumentimport"
+               data-toggle="tab"
+               class="nav-link active"
+               role="tab"
+               i18n:translate="">
+              Instrument Import
+            </a>
+          </li>
+          <li class="nav-item"
+              tal:condition="python:checkPermission('senaite.core: Manage Bika', context)">
+            <a href="#tab-setupdata"
+               data-toggle="tab"
+               class="nav-link"
+               role="tab"
+               i18n:translate="">
+              Load Setup Data
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#tab-autoimport"
+               data-toggle="tab"
+               class="nav-link"
+               role="tab"
+               i18n:translate="">
+              Auto Import
+            </a>
+          </li>
+        </ul>
+
+        <!-- Tab content -->
+        <div class="tab-content">
+
+          <!-- Import form -->
+          <div id="tab-instrumentimport"
+               class="tab-pane fade show active"
+               role="tabpanel">
+
+            <p class="small" i18n:translate="">
+              If the system doesn't find any match (Sample, Reference Analysis
+              or Duplicate), it will use the record's identifier to find matches
+              for Reference Sample IDs.
+              <br/>
+              If a Reference Sample ID is found, the system will automatically
+              create a Calibration Test (Reference Analysis) and will link it to
+              the selected Instrument.
+            </p>
+
+            <!-- Active instruments -->
+            <select name="instrument"
+                    class="custom-select"
+                    id="instrument_select"
+                    tal:define="instruments view/getInstruments">
+              <tal:options repeat="option instruments">
+                <option
+                  tal:attributes="value python:option;"
+                  tal:content="python:instruments.getValue(option)"/>
+              </tal:options>
+            </select>
+            <div class="text-secondary small" i18n:translate="">
+              Only instruments that have an import interface configured are displayed
+            </div>
+
+            <div class="field mt-3">
+              <label for="exim" i18n:translate="">Select Import Interface</label>
+              <select name="exim" id="exim" class="custom-select">
+              </select>
+            </div>
+
+            <!-- Container for instrument import template -->
+            <div id="import_form" class="pt-3"></div>
+            <div id="import_results" class="pt-3"></div>
+          </div>
+
+          <!-- Setup Data -->
+          <div id="tab-setupdata"
+               class="tab-pane fade"
+               role="tabpanel">
+            <span class="form-text text-muted" i18n:translate="">
+              Submit a valid Open XML (.XLSX) file containing setup records to continue.
+            </span>
+
+            <div class="row">
+              <div class="col-sm-6">
+                <h2>
+                  <span i18n:translate="">Load from file</span>
+                </h2>
+                <input class="custom-file" type="file" name="file"/>
+                <input type="submit"
+                       class="btn btn-sm btn-primary"
+                       name="setupfile"
+                       value="Submit"
+                       i18n:attributes="value"/>
+                <div class="form-text text-muted" i18n:translate="">
+                  Tip. Attached documents will not be loaded unless they are present in the instance.
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <h2>
+                  <span i18n:translate="">Select existing file</span>
+                </h2>
+                <select name="existing"
+                        class="form-control form-control-sm mb-2"
+                        id="existing">
+                  <tal:options tal:repeat="option view/getSetupDatas">
+                    <option tal:attributes="value python:'%(projectname)s:%(dataset)s'%(option)">
+                      <span tal:content="python:'%(displayname)s: %(dataset)s' % (option)"/>
+                    </option>
+                  </tal:options>
+                </select>
+                <input name="setupexisting"
+                       class="btn btn-sm btn-primary"
+                       type="submit"
+                       value="Submit"
+                       i18n:attributes="value"/>
+              </div>
+            </div>
+            <input type="hidden" name="projectname" tal:attributes="value view/getProjectName"/>
+          </div>
+
+          <!-- Auto Import -->
+          <div id="tab-autoimport"
+               class="tab-pane fade"
+               role="tabpanel">
+
+            <div class="pb-1">
+              <div class="form-text text-muted" i18n:translate="">
+                Instruments can be configured with one or multiple import data interfaces.
+              </div>
+              <div class="form-text text-muted" i18n:translate="">
+                Each import interface can define a folder, where the system
+                looks for the results files while automatically importing
+                results when calling the <code>auto_import_results</code> view.
+              </div>
+
+              <div class="py-3">
+                <div class="form-text text-muted" i18n:translate="">
+                  Example Cronjob to execute the auto import every 10 minutes
+                </div>
+                <code class="">
+                  # m h  dom mon dow   command
+                  <br/>
+                  */10 * * * * curl -u admin:secret <span tal:replace="python:context.absolute_url() + '/auto_import_results'"></span>
+                </code>
+              </div>
+            </div>
+
+            <div class="form-controls">
+              <!-- Show last results -->
+              <a class="" tal:attributes="href string:${context/absolute_url}/autoimportlogs">
+                <input type="button"
+                       class="btn btn-sm btn-outline-secondary"
+                       i18n:attributes="value"
+                       value="Show last auto import logs" />
+              </a>
+              <!-- Trigger auto import -->
+              <input type="submit"
+                     class="btn btn-sm btn-outline-secondary"
+                     name="auto_import_results"
+                     i18n:attributes="value"
+                     value="Manually trigger auto import" />
+            </div>
+
+            <!-- Auto import results -->
+            <pre class="autoimport-results pt-3"></pre>
+
+          </div>
+
+        </div>
+
+      </form>
+
+    </metal:content-core>
+
+  </body>
+</html>

@@ -1,0 +1,239 @@
+<tal:block tal:define="
+        profiles view/get_profiles;
+        all_services view/get_all_service_options_json;
+        profile_services view/get_profile_to_services_json;
+        lab_processes view/get_lab_processes_json;
+        ">
+
+    <div class="create-worksheet-modal modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" i18n:translate="">Create worksheet</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form name="create-worksheet-form"
+                      class="form"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      tal:attributes="action string:${here/absolute_url}/create_worksheet_modal">
+
+                    <!-- ===== 实验流程选择（与工作表互斥） ===== -->
+                    <div class="form-group form-group-sm mb-3">
+                        <label class="mr-2" for="lab-process-select">
+                            选择实验流程（批量创建流程）
+                        </label>
+                        <select id="lab-process-select"
+                                name="process_uid"
+                                class="selectpicker"
+                                data-live-search="true">
+                            <option value="">— 不使用流程，创建工作表 —</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            选择后将批量为所选样本创建该流程；选择流程后无需再选实验项目
+                        </small>
+                    </div>
+
+                    <hr id="mode-divider" style="border-top: 1px dashed #ccc; margin: 12px 0;"/>
+
+                    <!-- ===== 工作表模式（选流程后隐藏） ===== -->
+                    <div id="worksheet-group">
+
+                        <div class="form-group form-group-sm">
+                            <label i18n:translate="" class="mr-2" for="analysis-profiles-select">
+                                选择实验套餐
+                            </label>
+                            <select id="analysis-profiles-select"
+                                    name="profiles"
+                                    class="selectpicker"
+                                    data-live-search="true">
+                                <option value=""></option>
+                                <tal:block tal:repeat="p profiles">
+                                    <option tal:attributes="value p/uid" tal:content="p/title">Profile</option>
+                                </tal:block>
+                            </select>
+                            <small id="analysis-profiles-help" i18n:translate="" class="form-text text-muted">
+                                可不选择实验套餐；选择后将仅显示该套餐包含的实验项目
+                            </small>
+                        </div>
+
+                        <div class="form-group form-group-sm mt-2">
+                            <label i18n:translate="" class="mr-2" for="analysis-services-select">
+                                选择实验项目（必选）
+                            </label>
+                            <select id="analysis-services-select"
+                                    name="services:list"
+                                    class="selectpicker"
+                                    data-live-search="true"
+                                    multiple="multiple"
+                                    data-actions-box="true"
+                                    data-selected-text-format="count > 2">
+                            </select>
+                            <small id="analysis-services-help" i18n:translate="" class="form-text text-muted">
+                                必须选择至少 1 个实验项目；未选套餐时将列出你可见的全部实验项目
+                            </small>
+                        </div>
+
+                    </div>
+                    <!-- ===== 工作表模式结束 ===== -->
+
+                    <div class="form-group mt-3">
+                        <input class="btn btn-sm btn-primary"
+                               type="submit"
+                               name="create_worksheet"
+                               disabled="disabled"
+                               i18n:attributes="value"
+                               value="Create Worksheet"/>
+                    </div>
+
+                    <!-- hidden fields -->
+                    <input type="hidden" name="submitted" value="1"/>
+                    <input type="hidden" name="conditions_per_sample" value="" id="lp-conditions-per-sample"/>
+                    <input tal:replace="structure context/@@authenticator/authenticator"/>
+                    <input type="hidden" name="uids" value="" tal:attributes="value request/uids" />
+                </form>
+            </div>
+        </div>
+        <tal:block tal:replace="structure context/@@conditions_modal" />
+
+        <script type="text/javascript">
+            var ALL_SERVICES     = <tal:block tal:replace="structure all_services">[]</tal:block>;
+            var PROFILE_SERVICES = <tal:block tal:replace="structure profile_services">{}</tal:block>;
+            var LAB_PROCESSES    = <tal:block tal:replace="structure lab_processes">[]</tal:block>;
+
+            // 选中的样本 UID
+            var SELECTED_UIDS = (function () {
+                var uidsInput = document.querySelector("input[name='uids']");
+                if (uidsInput && uidsInput.value) {
+                    return uidsInput.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+                }
+                var m = window.location.search.match(/[?&]uids=([^&]+)/);
+                return m ? m[1].split(",").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            })();
+
+            // 站点根 URL（去掉 /samples 及之后的路径）
+            var BASE_URL = (function () {
+                var href = window.location.href.split("?")[0].split("#")[0];
+                var idx  = href.indexOf("/samples");
+                return idx > 0 ? href.substring(0, idx) : href.replace(/\/[^\/]*$/, "");
+            })();
+
+            $(function () {
+                console.log("[debug] SELECTED_UIDS=", SELECTED_UIDS);
+                console.log("[debug] BASE_URL=", BASE_URL);
+                console.log("[debug] LPConditionsModal=", typeof LPConditionsModal);
+                var $processSelect = $("#lab-process-select");
+
+                // 初始化 LabProcess 下拉
+                (LAB_PROCESSES || []).forEach(function (p) {
+                    $processSelect.append($("<option/>").val(p.uid).text(p.title));
+                });
+                $processSelect.selectpicker({liveSearch: true, noneSelectedText: "— \u4e0d\u4f7f\u7528\u6d41\u7a0b\uff0c\u521b\u5efa\u5de5\u4f5c\u8868 —"});
+                $("#analysis-profiles-select").selectpicker({liveSearch: true, noneSelectedText: _t("No profiles selected")});
+                $("#analysis-services-select").selectpicker({liveSearch: true, noneSelectedText: _t("No service selected")});
+
+                function fillServices(list) {
+                    var $s = $("#analysis-services-select");
+                    $s.empty();
+                    (list || []).forEach(function (it) {
+                        $s.append($("<option/>").val(it.uid || it.keyword).text(it.title));
+                    });
+                    $s.val([]);
+                    $s.selectpicker("refresh");
+                }
+
+                function hasSelection(v) {
+                    if (!v) return false;
+                    return $.isArray(v) ? v.length > 0 : !!v;
+                }
+
+                function updateSubmitButton() {
+                    var processUid = $processSelect.val();
+                    var $btn = $("input[name='create_worksheet']");
+                    if (processUid) {
+                        $btn.val("\u521b\u5efa\u5b9e\u9a8c\u6d41\u7a0b").attr("disabled", false);
+                    } else {
+                        $btn.val("Create Worksheet")
+                            .attr("disabled", !hasSelection($("#analysis-services-select").val()));
+                    }
+                }
+
+                $processSelect.on("changed.bs.select", function () {
+                    var uid = $(this).val();
+                    $("#worksheet-group").toggle(!uid);
+                    $("#mode-divider").toggle(!uid);
+                    updateSubmitButton();
+                });
+
+                $("#analysis-profiles-select").on("changed.bs.select", function () {
+                    var uid = $(this).val();
+                    fillServices(uid && PROFILE_SERVICES[uid] ? PROFILE_SERVICES[uid] : ALL_SERVICES);
+                    updateSubmitButton();
+                });
+
+                $("#analysis-services-select").on("changed.bs.select", function () {
+                    updateSubmitButton();
+                });
+
+                // 防止重复触发标志位
+                var _lp_submitting = false;
+
+                // 拦截表单提交：流程模式先弹请检信息批量 Modal
+                $("form[name='create-worksheet-form']").on("submit", function (e) {
+                    var processUid = $processSelect.val();
+
+                    // 工作表模式：正常提交
+                    if (!processUid) {
+                        $("input[name='create_worksheet']").attr("disabled", true);
+                        return;
+                    }
+
+                    // 已在处理中，忽略重复触发
+                    if (_lp_submitting) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    e.preventDefault();
+
+                    // 等待 LPConditionsModal 加载（最多 2 秒）
+                    var _waitCount = 0;
+                    var _waitTimer = setInterval(function () {
+                        _waitCount++;
+                        if (typeof LPConditionsModal !== "undefined") {
+                            clearInterval(_waitTimer);
+                            _lp_submitting = true;
+                            LPConditionsModal.openBatch({
+                                processUid: processUid,
+                                baseUrl:    BASE_URL,
+                                arUids:     SELECTED_UIDS,
+                                onConfirm: function (conditionsPerSample) {
+                                    $("#lp-conditions-per-sample").val(JSON.stringify(conditionsPerSample));
+                                    $("input[name='create_worksheet']").attr("disabled", true);
+                                    $("form[name='create-worksheet-form']")[0].submit();
+                                },
+                                onCancel: function () {
+                                    _lp_submitting = false;
+                                    $("input[name='create_worksheet']").attr("disabled", false);
+                                }
+                            });
+                        } else if (_waitCount >= 20) {
+                            // 超时降级：直接提交（无 conditions）
+                            clearInterval(_waitTimer);
+                            console.warn("[create_worksheet] LPConditionsModal timeout");
+                            $("input[name='create_worksheet']").attr("disabled", true);
+                            $("form[name='create-worksheet-form']")[0].submit();
+                        }
+                    }, 100);
+                });
+
+                fillServices(ALL_SERVICES);
+                updateSubmitButton();
+            });
+        </script>
+
+    </div>
+</tal:block>

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal">
+
+<head>
+    <meta charset="utf-8"/>
+    <title>Owner History</title>
+    <style type="text/css">
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #222;
+        }
+
+        h1, h2, h3 {
+            margin: 12px 0 8px;
+        }
+
+        .muted {
+            color: #888;
+        }
+
+        .section {
+            margin: 18px 0 28px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            background: #fff;
+        }
+
+        th, td {
+            border: 1px solid #e5e5e5;
+            padding: 8px 10px;
+            vertical-align: top;
+            text-align: center;
+        }
+
+        th {
+            background: #f7f7f7;
+            font-weight: 600;
+        }
+
+        .kv th {
+            width: 30%;
+        }
+
+        .phase-head {
+            display: flex;
+            gap: 18px;
+            align-items: baseline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #555;
+            background: #fafafa;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .card {
+            flex: 1 1 320px;
+            min-width: 280px;
+            background: #fff;
+            border: 1px solid #ececec;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+        }
+
+        .card h3 {
+            padding: 10px 12px;
+            margin: 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            background: #fcfcfc;
+        }
+
+        .card .content {
+            padding: 10px 12px;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .subrow td {
+            background: #fcfcfc;
+            border-top: 0;
+        }
+
+        .table-plain th, .table-plain td {
+            border: 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .table-plain tr:last-child td {
+            border-bottom: 0;
+        }
+
+        /* handoff */
+        .handoff-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .handoff-row {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+            border: 1px solid #e8edf3;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .handoff-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            min-width: 360px;
+            border-right: 1px dashed #e8edf3;
+        }
+
+        .handoff-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            position: relative;
+        }
+
+        .h-node {
+            padding: 6px 12px;
+            border: 2px solid #ef4444;
+            color: #b91c1c;
+            border-radius: 8px;
+            background: #fff;
+            font-weight: 700;
+        }
+
+        .h-arrow {
+            font-size: 18px;
+            color: #64748b;
+            padding: 0 4px;
+        }
+
+        .h-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: #f1f5f9;
+        }
+
+        .h-content {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+        }
+
+        .h-chip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 14px;
+            background: #f7f9fc;
+            border: 1px solid #e8edf3;
+            color: #475467;
+            font-size: 12px;
+        }
+
+        .h-summary {
+            color: #334155;
+        }
+
+        .h-details {
+            color: #667085;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 1100px) {
+            .handoff-left {
+                min-width: 260px
+            }
+
+            .h-details {
+                width: 100%
+            }
+        }
+    </style>
+</head>
+
+<body tal:define="
+        phases   view/phases   | python: [];
+        items    view/items    | python: [];
+        analyses view/analyses | view/assigned_analyses | python: [];
+        items_by_service python: dict(((i.get('service'), i) for i in (items or []) if isinstance(i, dict) and i.get('service')));
+        to_u python: (lambda v: (isinstance(v, unicode) and v) or (isinstance(v, str) and v.decode('utf-8','ignore')) or unicode(v));
+        ">
+
+<div class="section">
+    <h2>实验（样本）流转</h2>
+    <div class="muted handoff-hint">提示：点击人员可筛选对应数据；再次点击可取消筛选（或按 ESC 清除）。</div>
+    <div class="handoff-wrap"
+             tal:define="
+            _u python: to_u;
+            phases_pre python: [p for p in (phases or []) if isinstance(p, dict) and p.get('key') in ('sample_due','sample_received')];
+            ">
+        <div tal:define="
+                chain python:getattr(view, 'handoff_chain', {});
+                nodes python:(chain and chain.get('nodes')) or [];
+                node_ids python:(chain and chain.get('node_ids')) or [];
+                ">
+
+            <div tal:condition="python: bool(nodes)" class="handoff-row" style="margin:10px 0; padding:0;">
+                <div class="handoff-left" style="width:100%; justify-content:flex-start;">
+                    <div tal:repeat="i python:range(len(nodes))" style="display:inline;">
+                        <span class="h-node js-chain-user"
+                                 tal:content="python:nodes[i]"
+                                 tal:attributes="
+                                data-userid python:node_ids[i];
+                                data-user   python:nodes[i];
+                                ">User</span>
+                        <span class="h-arrow" tal:condition="python:i != len(nodes)-1">→</span>
+                    </div>
+                </div>
+            </div>
+
+            <div tal:condition="python:not bool(nodes)" class="muted" style="margin:10px 0;">
+                暂无流转记录
+            </div>
+        </div>
+
+        <tal:block tal:condition="python:False">
+            <div class="handoff-row" tal:repeat="ed view/user_handoffs">
+                <div class="handoff-left">
+                    <span class="h-node" tal:content="ed/frm">from</span>
+                    <span class="h-arrow">→</span>
+                    <span class="h-node" tal:content="ed/to">to</span>
+                </div>
+
+                <div class="handoff-right"
+                         tal:define="
+                        _u python: to_u;
+                        when    python: _u(ed.get('when',''));
+                        phase_t python: _u(ed.get('phase_title',''));
+                        svc     python: _u(ed.get('service',''));
+                        step_lb python: _u(ed.get('step_label',''));
+                        state   python: _u(ed.get('state',''));
+                        summary python:
+                        (phase_t and u'(时间：%s，阶段：%s)' % (when or u'-', phase_t))
+                        or u'(时间：%s，服务：%s，步骤：%s，状态：%s)' % (when, svc, step_lb, state);
+                        details_text python: u'  ·  '.join([
+                        u'%s / %s / %s / %s' % (
+                        _u(d.get('when','')), _u(d.get('service','')),
+                        _u(d.get('step_label','')), _u(d.get('state',''))
+                        ) for d in (ed.get('details') or [])
+                        ]);
+                        ">
+                    <span class="h-line"></span>
+                    <div class="h-content">
+                        <span class="h-summary h-chip" tal:content="summary"></span>
+                        <span class="h-details" tal:condition="python: bool(details_text)" tal:content="details_text"></span>
+                        <span class="h-details muted" tal:condition="python: not bool(details_text)">—</span>
+                    </div>
+                </div>
+            </div>
+            <div class="muted" tal:condition="python: not bool(view.user_handoffs)">
+                暂无流转记录
+            </div>
+        </tal:block>
+
+    </div>
+</div>
+
+<h1>样本处理历史</h1>
+
+<!-- part 1-->
+<div id="sec-phases" class="section" tal:condition="python: bool(phases)">
+    <h2>阶段记录</h2>
+    <div class="grid">
+        <div class="card js-phase"
+                 tal:repeat="p phases"
+                 tal:attributes="
+                data-userid python:(p.get('event',{}).get('actor') or '');
+                data-user   python:(p.get('event',{}).get('actor_display') or '');
+                ">
+            <tal:block tal:define="is_dict python: isinstance(p, dict)">
+                <h3>
+                    <span tal:content="python:(is_dict and (p.get('title') or p.get('key') or u'阶段')) or to_u(p)">阶段</span>
+                </h3>
+                <div class="content">
+                    <div class="phase-head" tal:condition="python: is_dict and bool(p.get('event'))">
+                        <div class="badge"><span
+                                class="nowrap">操作者：</span><strong tal:content="python:p.get('event',{}).get('actor_display',u'-')">-</strong>
+                        </div>
+                        <div class="badge"><span
+                                class="nowrap">对象：</span><span tal:content="python:p.get('event',{}).get('obj_title_display',u'-')">-</span>
+                        </div>
+                        <div class="badge"><span
+                                class="nowrap">时间：</span><span tal:content="python:p.get('event',{}).get('time_str',u'-')">-</span>
+                        </div>
+                    </div>
+                    <table class="kv" tal:condition="python:is_dict and bool(p.get('data'))">
+                        <thead>
+                        <tr>
+                            <th>字段</th>
+                            <th>值</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr tal:repeat="item python: sorted(p.get('data',{}).items(), key=lambda x: to_u(x[0]))">
+                            <td tal:content="python: to_u(item[0])">字段</td>
+                            <td tal:content="python:(to_u(item[1]) if item[1] not in (None,'') else u'-')">值</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="muted" tal:condition="python:is_dict and not bool(p.get('data'))">本阶段无结构化字段。
+                    </div>
+                </div>
+            </tal:block>
+        </div>
+    </div>
+</div>
+
+<!-- part2 -->
+<div id="sec-analyses" class="section" tal:condition="python: bool(analyses)">
+    <h2>实验分析项目</h2>
+    <table id="analysis-table">
+        <thead>
+        <tr>
+            <th>分析项目</th>
+            <th>分析人员</th>
+            <th class="nowrap">完成 / 总数</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tal:rows tal:repeat="row analyses">
+            <tal:block tal:define="
+                    is_dict python: isinstance(row, dict);
+                    svc     python: ((is_dict and row.get('service')) or ((not is_dict) and (len(row)>0 and row[0])) or u'-');
+                    analyst python: ((is_dict and (row.get('analyst') or row.get('analyst_id'))) or ((not is_dict) and (len(row)>1 and row[1])) or u'-');
+                    done    python: ((is_dict and row.get('done')) or ((not is_dict) and (len(row)>2 and row[2])));
+                    total   python: ((is_dict and row.get('total')) or ((not is_dict) and (len(row)>3 and row[3])));
+                    preferred_item python: (is_dict and (row.get('conditions') or row.get('results')) and row) or {};
+                    item    python: preferred_item or items_by_service.get(svc,{});
+                    ">
+
+                <tr class="js-analysis-row"
+                         tal:attributes="
+                        data-userid python: (is_dict and (row.get('analyst_id') or '')) or '';
+                        data-user   python: to_u(analyst);
+                        ">
+
+                    <td tal:content="python: to_u(svc)">项目</td>
+                    <td tal:content="python: to_u(analyst)">人员</td>
+                    <td tal:content="python: ((done is not None or total is not None) and (u'%s / %s' % (done or 0, total or 0))) or u'-'">
+                        -
+                    </td>
+                </tr>
+                <tr class="subrow js-analysis-row"
+                         tal:condition="python: bool(item)"
+                         tal:attributes="
+                        data-userid python: (is_dict and (row.get('analyst_id') or '')) or '';
+                        data-user   python: to_u(analyst);
+                        ">
+                    <td colspan="3">
+                        <div style="display:flex;gap:16px;">
+                            <div class="cond-col panel-box">
+                                <strong>条件</strong>
+                                <table class="table-plain" style="margin-top:6px;">
+                                    <tbody tal:define="conds python: item.get('conditions') or {}">
+                                    <tal:dict tal:condition="python:isinstance(conds,dict)">
+                                        <tr tal:repeat="kv python: sorted(conds.items(), key=lambda x: to_u(x[0]))">
+                                            <td tal:content="python: to_u(kv[0])">字段</td>
+                                            <td tal:content="python:(to_u(kv[1]) if kv[1] not in (None,'',u'') else u'(未设置)')">
+                                                值
+                                            </td>
+                                        </tr>
+                                    </tal:dict>
+                                    <tal:list tal:condition="python: not isinstance(conds,dict)">
+                                        <tr tal:repeat="c conds" tal:define="
+                                                is_map python:isinstance(c,dict);
+                                                is_pair python:isinstance(c,(list,tuple)) and len(c)==2;
+                                                title_raw python:(is_map and (c.get('title') or c.get('keyword'))) or (is_pair and c[0]) or c or u'-';
+                                                value_raw python:(is_map and c.get('value')) or (is_pair and c[1]) or u'';
+                                                title python: to_u(title_raw);
+                                                value python:(isinstance(value_raw,(list,tuple)) and u', '.join([to_u(x) for x in value_raw])) or to_u(value_raw);
+                                                ">
+                                            <td tal:content="title">字段</td>
+                                            <td tal:content="python:(value if value not in (None,u'', '') else u'(未设置)')">
+                                                值
+                                            </td>
+                                        </tr>
+                                    </tal:list>
+                                    <tr tal:condition="python: not bool(conds)">
+                                        <td colspan="2" class="muted">未设置任何条件</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="res-col panel-box">
+                                <strong>结果</strong>
+                                <table class="table-plain result-table" style="margin-top:6px;">
+                                    <tbody tal:define="
+                                            res python: item.get('results') or {};
+                                            payloads python: item.get('results_payload') or {};
+                                            ">
+                                    <tr tal:repeat="kv python: sorted((res or {}).items(), key=lambda x: to_u(x[0]))">
+                                        <td tal:content="python: to_u(kv[0])">字段</td>
+
+                                        <td class="result-cell">
+                                            <div tal:define="payload python: (payloads or {}).get(kv[0])">
+
+                                                <!-- 普通文本 -->
+                                                <div tal:condition="python: not bool(payload)"
+                                                         tal:content="python:(to_u(kv[1]) if kv[1] not in (None,'',u'') else u'-')">
+                                                    值
+                                                </div>
+
+                                                <div tal:condition="python: bool(payload)" class="result-panel">
+                                                    <div tal:define="
+                                                            vals python: (payload.get('values') or []);
+                                                            imgs python: (payload.get('images') or []);
+                                                            rows python: [(u'%1+',0),(u'%2+',1),(u'%3+',2),(u'%0',3),(u'H-score',4),(u'总和',5)];
+                                                            ">
+                                                        <div class="rp-row">
+
+                                                            <div class="rp-metrics">
+                                                                <table class="table-plain rp-metrics-table">
+                                                                    <tbody>
+                                                                    <tr tal:repeat="rr rows">
+                                                                        <td class="rp-m-label" tal:content="python: rr[0]">
+                                                                            label
+                                                                        </td>
+                                                                        <td class="rp-m-val" tal:content="python: (vals[rr[1]] if len(vals) > rr[1] else u'-')">
+                                                                            0
+                                                                        </td>
+                                                                    </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+
+                                                            <div class="rp-images" tal:condition="python: bool(imgs)">
+                                                                <img tal:repeat="u imgs"
+                                                                         tal:attributes="src python: to_u(u).strip()"
+                                                                        class="rp-img"/>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr class="subrow" tal:condition="python: not bool(item)">
+                    <td colspan="3" class="muted">
+                        该项目暂无可展示的条件/结果（未在行内或 items 中找到与
+                        <span tal:replace="python: to_u(svc)">项目</span> 匹配的条目）。
+                    </td>
+                </tr>
+            </tal:block>
+        </tal:rows>
+        </tbody>
+    </table>
+</div>
+
+<!-- part 3 -->
+<div id="sec-flow" class="section">
+    <h2>流程流转</h2>
+    <div id="analysis-empty-hint" class="muted" style="display:none; margin:8px 0;">
+        当前人员在此样本中仅执行了<strong>分配/提交/复核</strong>等流程动作，没有生产表格等数据记录。
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    (function () {
+        function qsa(sel, root) {
+            return Array.prototype.slice.call((root || document).querySelectorAll(sel));
+        }
+
+        function closest(el, sel) {
+            while (el && el !== document) {
+                if (el.matches && el.matches(sel)) return el;
+                el = el.parentNode;
+            }
+            return null;
+        }
+
+        var activeId = null;
+        var activeName = null;
+
+        function applyFilter(userid, username) {
+            activeId = userid || null;
+            activeName = username || null;
+
+            qsa(".js-chain-user").forEach(function (el) {
+                var id = (el.getAttribute("data-userid") || "").trim();
+                var nm = (el.getAttribute("data-user") || "").trim();
+                var on = false;
+                if (activeId && id) on = (id === activeId);
+                else if (activeName) on = (nm === activeName);
+                el.classList.toggle("is-active", on);
+            });
+
+            var phaseHit = 0;
+            qsa(".js-phase").forEach(function (card) {
+                var id = (card.getAttribute("data-userid") || "").trim();
+                var nm = (card.getAttribute("data-user") || "").trim();
+
+                if (!activeId && !activeName) {
+                    card.style.display = "";
+                    phaseHit += 1;
+                    return;
+                }
+
+                var keep = false;
+                if (activeId && id) keep = (id === activeId);
+                else if (activeName) keep = (nm === activeName);
+
+                card.style.display = keep ? "" : "none";
+                if (keep) phaseHit += 1;
+            });
+
+            var analysisHit = 0;
+            qsa(".js-analysis-row").forEach(function (row) {
+                var id = (row.getAttribute("data-userid") || "").trim();
+                var nm = (row.getAttribute("data-user") || "").trim();
+
+                if (!activeId && !activeName) {
+                    row.style.display = "";
+                    analysisHit += 1;
+                    return;
+                }
+
+                var keep = false;
+                if (activeId && id) keep = (id === activeId);
+                else if (activeName) keep = (nm === activeName);
+
+                row.style.display = keep ? "" : "none";
+                if (keep) analysisHit += 1;
+            });
+
+            var secPhases = document.getElementById("sec-phases");
+            var secAnalyses = document.getElementById("sec-analyses");
+            var secFlow = document.getElementById("sec-flow");
+            var hint = document.getElementById("analysis-empty-hint");
+
+            if (!activeId && !activeName) {
+                if (secPhases) secPhases.style.display = "";
+                if (secAnalyses) secAnalyses.style.display = "";
+                if (secFlow) secFlow.style.display = "";
+                if (hint) hint.style.display = "none";
+                return;
+            }
+
+            if (secPhases) secPhases.style.display = (phaseHit > 0) ? "" : "none";
+            if (secAnalyses) secAnalyses.style.display = (analysisHit > 0) ? "" : "none";
+            var needFlow = (phaseHit === 0 && analysisHit === 0);
+            if (secFlow) secFlow.style.display = needFlow ? "" : "none";
+            if (hint) hint.style.display = needFlow ? "" : "none";
+        }
+
+        document.addEventListener("click", function (evt) {
+            var node = closest(evt.target, ".js-chain-user");
+            if (!node) return;
+
+            var id = (node.getAttribute("data-userid") || "").trim();
+            var nm = (node.getAttribute("data-user") || "").trim();
+
+            var same = false;
+            if (activeId && id && activeId === id) same = true;
+            else if ((!activeId) && activeName && nm && activeName === nm) same = true;
+
+            if (same) applyFilter(null, null);
+            else applyFilter(id || null, nm || null);
+        });
+
+        // ESC清除
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") applyFilter(null, null);
+        });
+
+        // 初始化默认选择最后一个操作者（已经完成操作）
+        var chainNodes = qsa(".js-chain-user");
+        if (chainNodes && chainNodes.length) {
+            var last = chainNodes[chainNodes.length - 1];
+            var id = (last.getAttribute("data-userid") || "").trim();
+            var nm = (last.getAttribute("data-user") || "").trim();
+            applyFilter(id || null, nm || null);
+        } else {
+            applyFilter(null, null);
+        }
+
+    })();
+</script>
+<style>
+    .h-node.is-active {
+        background: #ffecec;
+        box-shadow: 0 0 0 2px rgba(255, 0, 0, .25) inset;
+    }
+
+    .result-panel {
+        padding: 10px;
+    }
+
+    .result-panel .rp-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .result-panel .rp-metrics {
+        flex: 0 0 240px;
+    }
+
+    .result-panel .rp-metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .result-panel .rp-metrics-table td {
+        padding: 6px 8px;
+        vertical-align: top;
+    }
+
+    .result-panel .rp-m-label {
+        width: 60%;
+        color: #444;
+        white-space: nowrap;
+    }
+
+    .result-panel .rp-m-val {
+        width: 40%;
+        text-align: right;
+        font-weight: 600;
+    }
+
+    .result-panel .rp-images {
+        flex: 1 1 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-content: flex-start;
+    }
+
+    .result-panel .rp-img {
+        max-width: 260px;
+        height: auto;
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 2px;
+    }
+
+    td.result-cell {
+        vertical-align: top;
+        text-align: left;
+        padding-top: 6px;
+    }
+
+    .cond-col {
+        flex: 0 0 260px;
+        min-width: 220px;
+        max-width: 320px;
+    }
+
+    .cond-col .table-plain td {
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+
+    .cond-col .table-plain td:last-child {
+        white-space: normal;
+        word-break: break-all;
+    }
+
+    .res-col {
+        flex: 1 1 auto;
+        min-width: 520px;
+    }
+
+    .res-col .table-plain td {
+        padding: 4px 8px;
+        vertical-align: top;
+    }
+
+    .res-col .table-plain td:first-child {
+        width: 180px; /* 结果字段名固定窄一点 */
+        white-space: nowrap;
+    }
+
+    .res-col .table-plain td:last-child {
+        word-break: break-all;
+        white-space: normal;
+    }
+
+    .panel-box {
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #fff;
+    }
+
+    .panel-box strong {
+        display: block;
+        margin: 0 0 8px 0;
+        font-size: 14px;
+    }
+
+    .result-table {
+        width: 100%;
+    }
+
+    .result-table td {
+        padding: 5px 10px;
+        vertical-align: top;
+    }
+
+    .result-table tr td:first-child {
+        width: 220px;
+        color: #333;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .result-table tr td:last-child {
+        color: #111;
+        text-align: left;
+        white-space: normal;
+        word-break: break-all;
+    }
+
+    .result-table tr td:last-child.is-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .handoff-hint {
+        margin: 6px 0 10px;
+        font-size: 12px;
+        color: #2c3e50;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border: 1px solid #e6eefc;
+        border-radius: 6px;
+        background: #f7fbff;
+    }
+
+    .handoff-hint:before {
+        content: "\1F449";
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    @media (max-width: 1100px) {
+        .cond-col {
+            flex: 1 1 100%;
+            max-width: none;
+        }
+
+        .res-col {
+            flex: 1 1 100%;
+            min-width: 0;
+        }
+    }
+</style>
+</body>
+</html>

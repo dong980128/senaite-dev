@@ -1,0 +1,89 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="senaite.core">
+
+  <!-- Generic Indexer -->
+  <adapter name="is_active" factory=".generic.is_active"/>
+  <adapter name="listing_searchable_text" factory=".generic.listing_searchable_text"/>
+  <adapter name="sortable_title" factory=".generic.sortable_title"/>
+
+  <!-- Client Indexer -->
+  <adapter name="client_searchable_text" factory=".client.client_searchable_text"/>
+
+  <!-- Contact Indexer -->
+  <adapter name="listing_searchable_text" factory=".contact.listing_searchable_text"/>
+  <adapter name="getParentUID" factory=".contact.getParentUID"/>
+  <adapter name="sortable_title" factory=".contact.sortable_title"/>
+
+  <!-- Label Indexer -->
+  <adapter name="labels" factory=".label.labels"/>
+  <adapter name="listing_searchable_text" factory=".label.listing_searchable_text"/>
+
+  <!-- Sample Indexer -->
+  <adapter name="assigned_state" factory=".sample.assigned_state"/>
+  <adapter name="is_received" factory=".sample.is_received"/>
+  <adapter name="listing_searchable_text" factory=".sample.listing_searchable_text"/>
+
+  <!-- Request Analysis Indexer -->
+  <adapter name="getAncestorsUIDs" factory=".requestanalysis.getAncestorsUIDs"/>
+
+  <!-- AnalysisCategory Indexer -->
+  <adapter name="sortable_title" factory=".analysiscategory.sortable_title"/>
+
+  <!-- SubGroup Indexer -->
+  <adapter name="sortable_title" factory=".subgroup.sortable_title"/>
+
+  <!-- ARReport Indexer -->
+  <adapter name="sample_uid" factory=".arreport.sample_uid"/>
+  <adapter name="arreport_searchable_text" factory=".arreport.arreport_searchable_text"/>
+
+  <!-- Auditlog Indexer -->
+  <adapter name="action" factory=".auditlog.action"/>
+  <adapter name="actor" factory=".auditlog.actor"/>
+  <adapter name="fullname" factory=".auditlog.fullname"/>
+  <adapter name="listing_searchable_text" factory=".auditlog.listing_searchable_text"/>
+  <adapter name="modifiers" factory=".auditlog.modifiers"/>
+  <adapter name="snapshot_created" factory=".auditlog.snapshot_created"/>
+  <adapter name="snapshot_version" factory=".auditlog.snapshot_version"/>
+
+  <!-- BaseAnalysis Indexer -->
+  <adapter name="sortable_title" factory=".baseanalysis.sortable_title"/>
+
+  <!-- Setup indexer -->
+  <adapter name="category_uid" factory=".senaitesetup.category_uid"/>
+  <adapter name="department_id" factory=".senaitesetup.department_id"/>
+  <adapter name="department_title" factory=".senaitesetup.department_title"/>
+  <adapter name="department_uid" factory=".senaitesetup.department_uid"/>
+  <adapter name="instrument_title" factory=".senaitesetup.instrument_title"/>
+  <adapter name="instrumenttype_title" factory=".senaitesetup.instrumenttype_title"/>
+  <adapter name="listing_searchable_text" factory=".senaitesetup.listing_searchable_text"/>
+  <adapter name="method_available_uid" factory=".senaitesetup.method_available_uid"/>
+  <adapter name="point_of_capture" factory=".senaitesetup.point_of_capture"/>
+  <adapter name="price" factory=".senaitesetup.price"/>
+  <adapter name="price_total" factory=".senaitesetup.price_total"/>
+
+  <!-- Organization Indexer -->
+  <adapter name="title" factory=".organisation.title"/>
+
+  <!-- Worksheet Indexer -->
+  <adapter name="listing_searchable_text" factory=".worksheet.listing_searchable_text"/>
+
+  <!-- AnalysisProfile Indexer -->
+  <adapter name="sampletype_title" factory=".analysisprofile.sampletype_title"/>
+  <adapter name="sampletype_uid" factory=".analysisprofile.sampletype_uid"/>
+
+  <!-- SampleTemplate Indexer -->
+  <adapter name="sampletype_uid" factory=".sampletemplate.sampletype_uid"/>
+
+  <!-- SamplePoint Indexer -->
+  <adapter name="sampletype_uid" factory=".samplepoint.sampletype_uid"/>
+
+  <!-- SampleType Indexer -->
+  <adapter name="sampletype_title" factory=".sampletype.sampletype_title"/>
+  <adapter name="sampletype_uid" factory=".sampletype.sampletype_uid"/>
+
+  <!-- AnalysisSpec Indexer -->
+  <adapter name="sampletype_title" factory=".analysisspec.sampletype_title"/>
+  <adapter name="sampletype_uid" factory=".analysisspec.sampletype_uid"/>
+
+</configure>

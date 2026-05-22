@@ -1,0 +1,59 @@
+/* SENAITE toolbar styles */
+
+#senaite-toolbar  {
+    background-color: $senaite-color-dark;
+
+    /* Content views */
+    .content-views li a {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Workflow actions menu */
+    #plone-contentmenu-workflow {
+        margin-left: 1em;
+    }
+
+    li.active a, a.active {
+        color: $senaite-color-lightgrey;
+        background-color: $senaite-color-darkgrey;
+        border-radius: .2rem;
+    }
+    .dropdown-menu {
+        a, a.active {
+            color: $senaite-color-dark;
+            background-color: transparent;
+            &:hover {
+                color: $link-color;
+            }
+        }
+    }
+    a {
+        color: $senaite-color-grey;
+        &:hover {
+            color: $senaite-color-lightgrey;
+        }
+    }
+}
+
+#senaite-toolbar .tb-state {
+    &:before {
+        @extend .fa;
+        @extend .fa-bolt;
+        padding-right: 0.4rem;
+    }
+
+    &.state-active,
+    &.state-open { color: $state-active-color; }
+
+    &.state-inactive,
+    &.state-invalid,
+    &.state-closed,
+    &.state-cancelled { color: $state-inactive-color; }
+
+    &.state-sample_due {color: $state-sample_due-color; }
+    &.state-sample_received {color: $state-sample_received-color; }
+    &.state-to_be_verified { color: $state-to_be_verified-color; }
+    &.state-verified { color: $state-verified-color; }
+    &.state-published { color: $state-published-color; }
+}

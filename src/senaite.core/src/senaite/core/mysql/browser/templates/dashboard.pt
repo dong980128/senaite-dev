@@ -1,0 +1,180 @@
+<metal:page use-macro="context/main_template/macros/master"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core">
+
+    <metal:content fill-slot="content-core">
+
+        <tal:hdr tal:condition="python:request.RESPONSE.setHeader('Content-Type','text/html;charset=utf-8')" />
+        <script src="++resource++senaite.core.mysql/echarts/echarts.min.js"></script>
+        <script src="++resource++senaite.core.mysql/echarts/echarts-wordcloud.min.js"></script>
+        <div class="wrap">
+            <!-- 简单 tabs（如不需要，可以去掉） -->
+            <div id="tabs" class="tabs">
+                <div class="tab active" data-key="summary">HLA Summary</div>
+                <div class="tab" data-key="search">HLA Search</div>
+                <!--?                <div class="tab" data-key="type">HLA Type</div>-->
+                <a class="tab" data-key="table"
+                         tal:attributes="href string:${context/absolute_url}/@@hlav1-table">HLA Table</a>
+            </div>
+
+            <!-- 插入模块（Summary） -->
+            <div id="mod-summary" class="module active">
+                <metal:sum use-macro="context/@@hla_summary/macros/module"/>
+            </div>
+
+            <div id="mod-type" class="module">
+                <metal:type use-macro="context/@@hla_type/macros/module"/>
+            </div>
+
+            <div id="mod-search" class="module">
+                <metal:search use-macro="context/@@hla_search/macros/module"/>
+            </div>
+
+        </div>
+
+        <style>
+            body {
+                background: #f7f8fa;
+            }
+
+            .wrap {
+                padding: 16px 18px 36px;
+            }
+
+            .title {
+                font-size: 28px;
+                font-weight: 800;
+                color: #1f2328;
+                margin: 0 0 8px;
+            }
+
+            .tabs {
+                display: flex;
+                gap: 10px;
+                margin: 8px 0 12px;
+            }
+
+            .tab {
+                padding: 8px 16px;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                background: #fff;
+                cursor: pointer;
+            }
+
+            .tab.active {
+                background: #eef2ff;
+                color: #4338ca;
+                font-weight: 700;
+                border-color: #c7d2fe;
+            }
+
+            .module {
+                display: none;
+            }
+
+            .module.active {
+                display: block;
+            }
+
+            body.view-lims-data-dashboard .nb-2 {
+                display: none !important; /* 或者：height:0; margin:0; padding:0; */
+            }
+
+            #viewlet-above-content .mb-2 {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: 0 !important;
+            }
+
+            #viewlet-above-content nav.breadcrumbs,
+            #viewlet-above-content nav.breadcrumbs.pat-breadcrumbs,
+            #viewlet-above-content ol.breadcrumb {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            #content .container-fluid {
+                padding-top: 0 !important;
+            }
+
+            #content .container-fluid > .row:first-child {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            .tabs {
+                position: relative;
+                z-index: 6;
+            }
+        </style>
+
+        <script>
+            (function () {
+                var tabs = document.getElementById('tabs');
+                if (tabs) {
+                    tabs.addEventListener('click', function (e) {
+                        var t = e.target.closest('.tab');
+                        if (!t) return;
+
+                        var key = t.getAttribute('data-key');
+                        if (key === 'table') return;
+                        [].forEach.call(tabs.children, function (el) {
+                            el.classList.remove('active');
+                        });
+                        t.classList.add('active');
+
+                        ['summary', 'search', 'type'].forEach(function (k) {
+                            var el = document.getElementById('mod-' + k);
+                            if (el) el.classList.toggle('active', k === key);
+                        });
+                    });
+                }
+
+                document.body.classList.add('view-lims-data-dashboard');
+
+                function fixBreadcrumbTop() {
+                    // 命中 mb-2（不是 nb-2）
+                    var spacer = document.querySelector('#viewlet-above-content .mb-2');
+                    if (spacer) {
+                        spacer.style.display = 'none';
+                        spacer.style.height = '0px';
+                        spacer.style.margin = '0';
+                        spacer.style.padding = '0';
+                    }
+                }
+
+                fixBreadcrumbTop();
+                try {
+                    var mo = new MutationObserver(fixBreadcrumbTop);
+                    mo.observe(document.getElementById('viewlet-above-content') || document.body, {
+                        childList: true, subtree: true
+                    });
+                } catch (e) {
+                }
+
+                if (!window.__mysqlDash) window.__mysqlDash = {};
+                if (!window.__mysqlDash.breadcrumbObserver) {
+                    try {
+                        var mo = new MutationObserver(function () {
+                            fixBreadcrumbTop();
+                        });
+                        mo.observe(document.body, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ['class']
+                        });
+                        window.__mysqlDash.breadcrumbObserver = mo;
+                    } catch (e) {
+                    }
+                }
+                window.addEventListener('pat-ajax-success', fixBreadcrumbTop, true);
+                window.addEventListener('load', fixBreadcrumbTop, true);
+            })();
+        </script>
+
+    </metal:content>
+</metal:page>

@@ -1,0 +1,316 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="context/main_template/macros/master">
+
+
+<metal:main fill-slot="main"
+         tal:define="rows python:view.get_rows();
+        services_options python:view.get_services_options()">
+
+    <h1>Pipeline stages configuration</h1>
+
+    <p>
+        <a tal:attributes="href string:${context/absolute_url}/@@process">← Back</a>
+    </p>
+
+    <form method="post" id="pipeline-form">
+        <input type="hidden" name="form.submitted" value="1"/>
+        <input type="hidden" name="rows_json" id="rows_json" value=""/>
+
+        <table class="listing" style="width:100%">
+            <thead>
+            <tr>
+                <th>Step*</th>
+                <th>Task Name*</th>
+                <th>Mode*</th>
+                <th>Services（多选，仅analysis）</th>
+                <th>Handler（仅custom）</th>
+                <th>Users（逗号分隔）</th>
+                <th>条件服务（仅analysis）</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+
+            <tbody id="rows-body">
+
+            <tal:block tal:repeat="row rows">
+                <tr tal:define="
+                        svc_raw python:row.get('services', []);
+                                svc_list python:(svc_raw if isinstance(svc_raw,(list,tuple,set)) else [s.strip() for s in (svc_raw or '').split(',') if s.strip()]);
+                                        mode python:row.get('mode','analysis')
+                        ">
+
+                    <td><input class="p-step" tal:attributes="value python:row.get('step','')" /></td>
+                    <td><input class="p-name" tal:attributes="value python:row.get('name','')" /></td>
+
+                    <td>
+                        <select class="p-mode">
+                            <option value="analysis" tal:attributes="selected python:(mode=='analysis')">analysis
+                            </option>
+                            <option value="custom" tal:attributes="selected python:(mode=='custom')">custom</option>
+                        </select>
+                    </td>
+
+                    <!-- 注意：不再用 display:none 隐藏整格，否则列会错位；改为 visibility:hidden 保持列占位 -->
+                    <td class="col-services"
+                             tal:attributes="style python:'' if mode=='analysis' else 'visibility:hidden'">
+                        <select class="p-services js-services" multiple="multiple" size="1"
+                                style="width: 100%; min-width: 288px"
+                                tal:attributes="disabled python:(mode!='analysis')">
+                            <option tal:repeat="opt services_options"
+                                     tal:attributes="value python:opt.get('keyword');
+                                            selected python:(opt.get('keyword') in svc_list)"
+                                     tal:content="python:u'%s (%s)' % (opt.get('title') or opt.get('keyword'), opt.get('keyword'))">
+                            </option>
+                        </select>
+                    </td>
+
+                    <td class="col-handler"
+                             tal:attributes="style python:'' if mode=='custom' else 'visibility:hidden'">
+                        <input class="p-handler" style="width: 100%" placeholder="例如：tcr_upload_parse"
+                                 tal:attributes="value python:row.get('handler',''); disabled python:(mode!='custom')" />
+                    </td>
+
+                    <td><input class="p-users" tal:attributes="value python:row.get('users','')" /></td>
+                    <td class="col-conditional"
+                        tal:attributes="style python:'' if mode=='analysis' else 'visibility:hidden'">
+                        <textarea class="p-conditional" rows="2" style="width:100%;min-width:200px;font-size:11px"
+                                  placeholder="service:field=value&#10;每行一条，如:&#10;sc_library_prep:result_build_library=y"
+                                  tal:attributes="disabled python:(mode!='analysis')"
+                                  tal:content="python:view.conditional_to_text(row.get('conditional_services', []))"></textarea>
+                    </td>
+                    <td><a href="#" class="btn-del">删除</a></td>
+
+                </tr>
+            </tal:block>
+
+            <!-- Hidden template row (clean DOM; used for "Add row") -->
+            <tr id="row-template" style="display:none">
+                <td><input class="p-step" value="" /></td>
+                <td><input class="p-name" value="" /></td>
+
+                <td>
+                    <select class="p-mode">
+                        <option value="analysis" selected="selected">analysis</option>
+                        <option value="custom">custom</option>
+                    </select>
+                </td>
+
+                <td class="col-services" style="visibility:visible">
+                    <select class="p-services js-services" multiple="multiple" size="1"
+                            style="width: 100%; min-width: 288px">
+                        <option tal:repeat="opt services_options"
+                                tal:attributes="value python:opt.get('keyword')"
+                                tal:content="python:u'%s (%s)' % (opt.get('title') or opt.get('keyword'), opt.get('keyword'))">
+                        </option>
+                    </select>
+                </td>
+
+                <td class="col-handler" style="visibility:hidden">
+                    <input class="p-handler" style="width: 100%" placeholder="例如：tcr_upload_parse" value="" disabled="disabled"/>
+                </td>
+
+                <td><input class="p-users" value="" /></td>
+                <td class="col-conditional" style="visibility:visible">
+                    <textarea class="p-conditional" rows="2" style="width:100%;min-width:200px;font-size:11px"
+                              placeholder="service:field=value&#10;每行一条，如:&#10;sc_library_prep:result_build_library=y"></textarea>
+                </td>
+                <td><a href="#" class="btn-del">删除</a></td>
+            </tr>
+
+            </tbody>
+        </table>
+
+        <div style="margin-top:10px;">
+            <button id="btn-add" type="button">Add row</button>
+
+            <button type="submit" style="margin-left:10px;">Save</button>
+        </div>
+
+    </form>
+
+    <script type="text/javascript">
+        (function () {
+
+            function setDisabled(el, disabled) {
+                if (!el) return;
+                el.disabled = !!disabled;
+            }
+
+            // Optional: enhance services multi-select to "dropdown-like" (if select2 is available)
+            function initServicesSelect2(root) {
+                if (!window.jQuery) return;
+                if (!jQuery.fn || !jQuery.fn.select2) return;
+
+                // Only init real rows (skip the hidden template row)
+                var $root = jQuery(root || document);
+                $root.find("#rows-body tr:not(#row-template) .js-services").each(function () {
+                    var $el = jQuery(this);
+                    // prevent double-init
+                    if ($el.data("select2")) return;
+                    $el.select2({ width: "100%" });
+                });
+            }
+
+            function toggleRow(tr) {
+                if (!tr || tr.id === "row-template") return;
+
+                var modeSel = tr.querySelector(".p-mode");
+                var mode = modeSel ? modeSel.value : "analysis";
+
+                var svcTd = tr.querySelector(".col-services");
+                var svcSel = tr.querySelector(".p-services");
+
+                var handlerTd = tr.querySelector(".col-handler");
+                var handlerInp = tr.querySelector(".p-handler");
+
+                if (mode === "analysis") {
+                    if (svcTd) svcTd.style.visibility = "visible";
+                    setDisabled(svcSel, false);
+
+                    if (handlerTd) handlerTd.style.visibility = "hidden";
+                    setDisabled(handlerInp, true);
+                } else {
+                    if (svcTd) svcTd.style.visibility = "hidden";
+                    setDisabled(svcSel, true);
+
+                    if (handlerTd) handlerTd.style.visibility = "visible";
+                    setDisabled(handlerInp, false);
+                }
+            }
+
+            function collectRows() {
+                var rows = [];
+                var trs = document.querySelectorAll("#rows-body tr");
+                for (var i = 0; i < trs.length; i++) {
+                    var tr = trs[i];
+                    if (tr.id === "row-template") continue;
+
+                    var step = (tr.querySelector(".p-step") || {}).value || "";
+                    var name = (tr.querySelector(".p-name") || {}).value || "";
+                    var mode = (tr.querySelector(".p-mode") || {}).value || "analysis";
+                    var users = (tr.querySelector(".p-users") || {}).value || "";
+
+                    var handler = "";
+                    var services = [];
+
+                    if (mode === "analysis") {
+                        var sel = tr.querySelector(".p-services");
+                        if (sel && !sel.disabled) {
+                            for (var j = 0; j < sel.options.length; j++) {
+                                if (sel.options[j].selected) services.push(sel.options[j].value);
+                            }
+                        }
+                    } else {
+                        handler = (tr.querySelector(".p-handler") || {}).value || "";
+                    }
+
+                    // 收集 conditional_services
+                    var conditionalText = "";
+                    var condTa = tr.querySelector(".p-conditional");
+                    if (condTa && !condTa.disabled) conditionalText = condTa.value || "";
+                    var conditionalServices = [];
+                    conditionalText.split("\n").forEach(function(line) {
+                        line = line.trim();
+                        if (!line) return;
+                        // 格式: service:field=value  例如 sc_library_prep:result_build_library=y
+                        var colonIdx = line.indexOf(":");
+                        if (colonIdx < 0) return;
+                        var svc = line.substring(0, colonIdx).trim();
+                        var rest = line.substring(colonIdx + 1).trim();
+                        var eqIdx = rest.indexOf("=");
+                        if (eqIdx < 0) return;
+                        var field = rest.substring(0, eqIdx).trim();
+                        var val = rest.substring(eqIdx + 1).trim();
+                        if (svc && field && val) {
+                            conditionalServices.push({
+                                service: svc,
+                                condition_field: field,
+                                condition_value: val,
+                                trigger_service: services.length > 0 ? services[0] : ""
+                            });
+                        }
+                    });
+
+                    rows.push({
+                        step: step,
+                        name: name,
+                        mode: mode,
+                        services: services,
+                        handler: handler,
+                        users: users,
+                        conditional_services: conditionalServices
+                    });
+                }
+                return rows;
+            }
+
+            document.addEventListener("change", function (e) {
+                if (e.target && e.target.classList.contains("p-mode")) {
+                    toggleRow(e.target.closest("tr"));
+                }
+            });
+
+            document.getElementById("btn-add").addEventListener("click", function (e) {
+                e.preventDefault();
+
+                var tbody = document.getElementById("rows-body");
+                var tpl = document.getElementById("row-template");
+                if (!tpl) return;
+
+                var clone = tpl.cloneNode(true);
+
+                // make it a real row
+                clone.removeAttribute("id");
+                clone.style.display = "";
+
+                // clear values
+                (clone.querySelector(".p-step") || {}).value = "";
+                (clone.querySelector(".p-name") || {}).value = "";
+                (clone.querySelector(".p-users") || {}).value = "";
+                (clone.querySelector(".p-handler") || {}).value = "";
+
+                var sel = clone.querySelector(".p-services");
+                if (sel) {
+                    for (var j = 0; j < sel.options.length; j++) sel.options[j].selected = false;
+                }
+                (clone.querySelector(".p-mode") || {}).value = "analysis";
+
+                tbody.appendChild(clone);
+
+                // init UI state
+                toggleRow(clone);
+                initServicesSelect2(clone);
+            });
+
+            document.addEventListener("click", function (e) {
+                if (e.target && e.target.classList.contains("btn-del")) {
+                    e.preventDefault();
+                    var tr = e.target.closest("tr");
+                    if (!tr) return;
+
+                    var tbody = document.getElementById("rows-body");
+                    var realRows = tbody.querySelectorAll("tr:not(#row-template)");
+                    if (realRows.length <= 1) return; // keep one row
+
+                    tr.parentNode.removeChild(tr);
+                }
+            });
+
+            document.getElementById("pipeline-form").addEventListener("submit", function () {
+                var rows = collectRows();
+                document.getElementById("rows_json").value = JSON.stringify(rows);
+            });
+
+            // init
+            var trs = document.querySelectorAll("#rows-body tr");
+            for (var i = 0; i < trs.length; i++) toggleRow(trs[i]);
+            initServicesSelect2(document);
+
+        })();
+    </script>
+
+</metal:main>
+
+</html>

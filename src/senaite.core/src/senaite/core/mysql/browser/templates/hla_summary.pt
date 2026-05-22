@@ -1,0 +1,518 @@
+<metal:module xmlns="http://www.w3.org/1999/xhtml"
+              xmlns:tal="http://xml.zope.org/namespaces/tal"
+              xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core"
+         metal:define-macro="module">
+
+    <tal:hdr tal:condition="python:request.RESPONSE.setHeader('Content-Type','text/html;charset=utf-8')" />
+
+    <div class="dashboard-wrap">
+        <div class="section-sub">HLA 各分型人群占比</div>
+
+        <div class="toolbar">
+            <span class="label">分型：</span>
+            <div id="seg" class="seg"></div>
+        </div>
+
+        <div id="err" class="err"></div>
+
+        <div class="grid">
+            <div class="card wordcloud">
+                <h3 id="title-wc">A 分型 · 词云</h3>
+                <div id="chart-a" class="echart"></div>
+                <div class="hint">提示：词云大小表示占比，数值为 %。</div>
+            </div>
+
+            <div class="card barwrap">
+                <h3 id="title-bar">A 分型 · 排名柱状图</h3>
+                <div id="bar-a" class="echart"></div>
+            </div>
+        </div>
+    </div>
+
+    <style type="text/css">
+        :root {
+            --bg: #f7f8fa;
+            --card: #fff;
+            --text: #1f2328;
+            --sub: #6a737d;
+            --border: #e5e7eb;
+            --brand: #3b82f6;
+            --h-wc: 300px;
+            --h-bar: 400px;
+        }
+
+        .dashboard-wrap {
+            padding: 16px 36px;
+        }
+
+        .section-sub {
+            font-size: 13px;
+            color: var(--sub);
+            margin: -2px 0 12px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 4px 0 10px;
+
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .toolbar .label {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .seg {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+        }
+
+        .seg-btn {
+            padding: 6px 14px;
+            font-size: 14px;
+            line-height: 24px;
+            cursor: pointer;
+            user-select: none;
+            color: #374151;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all .15s ease;
+        }
+
+        .seg-btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .seg-btn.active {
+            background: #eef2ff;
+            color: #4338ca;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, .12) inset;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+            padding: 18px 20px;
+            margin: 14px 0;
+        }
+
+        .card h3 {
+            margin: 0 0 10px;
+            font-size: clamp(16px, 1.6vw, 18px);
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .dashboard-wrap .grid {
+            display: grid;
+            grid-gap: 16px;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr) !important;
+        }
+
+        .card {
+            min-width: 0;
+        }
+
+
+        .echart {
+            width: 100%
+        }
+
+        @media (max-width: 1150px) {
+            .dashboard-wrap .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (min-width: 1600px) {
+            .dashboard-wrap .grid {
+                grid-template-columns: 1.2fr 2fr !important;
+            }
+        }
+
+        .echart {
+            width: 100%;
+        }
+
+        .wordcloud .echart {
+            height: var(--h-wc);
+        }
+
+        .barwrap .echart {
+            height: var(--h-bar);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 6px;
+        }
+
+        .err {
+            color: #dc2626;
+            font-size: 13px;
+            padding: 8px 0;
+            display: none;
+        }
+    </style>
+
+    <script type="text/javascript">
+        (function () {
+            /* 反转义：防止标题出现 &#NNNN; */
+            function htmlEntityDecode(s) {
+                if (s == null) return "";
+                var el = document.createElement('textarea');
+                el.innerHTML = s;
+                return el.value;
+            }
+
+            function safeSetTitle(id, txt) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = htmlEntityDecode(txt);
+            }
+
+            var LOCI = ['A', 'B', 'C', 'DRB1', 'DQB1', 'DPB1'];
+            var ACTIVE = 'A';
+            var wc = null, bar = null;
+
+            var THEME = {
+                textStyle: {
+                    fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
+                    color: "#1f2328"
+                },
+                grid: {left: 10, right: 10, top: 28, bottom: 64, containLabel: true},
+                tooltip: {
+                    backgroundColor: "rgba(17,24,39,.92)",
+                    borderWidth: 0,
+                    textStyle: {color: "#fff"},
+                    padding: [8, 10]
+                },
+                axisCommon: {
+                    axisLine: {lineStyle: {color: "#d1d5db"}},
+                    axisTick: {show: false},
+                    axisLabel: {color: "#4b5563"}
+                },
+                splitLine: {lineStyle: {color: "#e5e7eb"}}
+            };
+
+            function makeGradient() {
+                return new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: '#60a5fa'}, {
+                    offset: 1,
+                    color: '#c7d2fe'
+                }]);
+            }
+
+            function applyCardHeight() {
+                var w = window.innerWidth || document.documentElement.clientWidth;
+                var h = window.innerHeight || document.documentElement.clientHeight;
+                var isSmall = (w <= 1500) || (h <= 850);
+                var wcH = isSmall ? 240 : 300;
+                var barH = isSmall ? 280 : 360;
+                document.documentElement.style.setProperty('--h-wc', wcH + 'px');
+                document.documentElement.style.setProperty('--h-bar', barH + 'px');
+            }
+
+            function visibleCountByScreen() {
+                var w = window.innerWidth || document.documentElement.clientWidth;
+                return w <= 1400 ? 14 : 20;
+            }
+
+            function buildSeg() {
+                var box = document.getElementById('seg');
+                box.innerHTML = '';
+                LOCI.forEach(function (k) {
+                    var b = document.createElement('div');
+                    b.className = 'seg-btn' + (k === ACTIVE ? ' active' : '');
+                    b.textContent = k;
+                    b.onclick = function () {
+                        if (ACTIVE === k) return;
+                        ACTIVE = k;
+                        Array.prototype.forEach.call(box.children, function (el) {
+                            el.classList.remove('active');
+                        });
+                        b.classList.add('active');
+                        safeSetTitle('title-wc', k + ' 分型 · 词云');
+                        safeSetTitle('title-bar', k + ' 分型 · 排名柱状图');
+                        fetchAndRender(k);
+                    };
+                    box.appendChild(b);
+                });
+            }
+
+            function normalizeHLAName(name) {
+                if (!name) return '';
+                return name.replace(/^([A-Z0-9]+?\*\d{2}:\d{2}).*$/, '$1');
+            }
+
+            function preprocessForWordCloud(raw, opts) {
+                var o = Object.assign({topN: 30, cover: 0.85, minWeight: 0.3, maxWeight: 1.0}, opts || {});
+                // 1) 归并
+                var m = new Map();
+                (raw || []).forEach(function (d) {
+                    var key = normalizeHLAName(d.name);
+                    var v = Number(d.value) || 0;
+                    m.set(key, (m.get(key) || 0) + v);
+                });
+                var arr = Array.from(m, function (kv) {
+                    return {name: kv[0], value: kv[1]};
+                });
+
+                if (!arr.length) return [];
+
+                // 2) 排序 + 截断（TopN 或 累计覆盖到 cover）
+                arr.sort(function (a, b) {
+                    return b.value - a.value;
+                });
+                var cut = arr.slice();
+                if (o.cover) {
+                    var total = arr.reduce(function (s, i) {
+                        return s + i.value;
+                    }, 0) || 1;
+                    var sum = 0, idx = 0;
+                    for (; idx < arr.length; idx++) {
+                        sum += arr[idx].value;
+                        if (sum / total >= o.cover) break;
+                    }
+                    cut = arr.slice(0, Math.max(idx + 1, Math.min(o.topN, arr.length)));
+                } else {
+                    cut = arr.slice(0, Math.min(o.topN, arr.length));
+                }
+                var others = arr.slice(cut.length);
+                if (others.length) cut.push({
+                    name: '其他', value: others.reduce(function (s, i) {
+                        return s + i.value;
+                    }, 0)
+                });
+
+                // 3) 分位数缩放：把极大/极小值拉近到 [minWeight, maxWeight]
+                var values = cut.map(function (d) {
+                    return d.value;
+                }).sort(function (a, b) {
+                    return a - b;
+                });
+                var q = function (p) {
+                    return values[Math.floor((values.length - 1) * p)];
+                };
+                var p10 = q(0.10), p90 = q(0.90);
+                var lo = Math.max(1e-6, p10), hi = Math.max(lo * 1.0001, p90);
+
+                function scale(v) {
+                    var t = (v - lo) / (hi - lo);
+                    t = Math.max(0, Math.min(1, t));
+                    return o.minWeight + (o.maxWeight - o.minWeight) * t; // 0.3~1.0
+                }
+
+                return cut.map(function (d) {
+                    return {
+                        name: d.name,
+                        value: d.value,         // 保留原始占比（tooltip 用）
+                        _w: scale(d.value)      // 用于排版的权重
+                    };
+                });
+            }
+
+            function renderChartsFor(payload) {
+                applyCardHeight();
+
+                var A = payload || {wordcloud: [], bar: {x: [], y: []}};
+                A.wordcloud = Array.isArray(A.wordcloud) ? A.wordcloud : [];
+                var wcData = preprocessForWordCloud(A.wordcloud, {topN: 30, cover: 0.85});
+
+                A.bar = A.bar || {x: [], y: []};
+                var bx = Array.isArray(A.bar.x) ? A.bar.x : [];
+                var by = Array.isArray(A.bar.y) ? A.bar.y : [];
+
+                if (!wc) wc = echarts.init(document.getElementById('chart-a'));
+                wc.setOption({
+                    animationDuration: 600,
+                    tooltip: {
+                        formatter: function (p) {
+                            var raw = (p.data && (p.data.raw != null)) ? p.data.raw : p.value;
+                            return p.name + "：" + Number(raw).toFixed(2) + "%";
+                        },
+                        backgroundColor: THEME.tooltip.backgroundColor,
+                        textStyle: THEME.tooltip.textStyle,
+                        padding: THEME.tooltip.padding
+                    },
+                    series: [{
+                        type: 'wordCloud',
+                        shape: 'circle',
+                        left: 'center',
+                        top: 'center',
+                        width: '95%',
+                        height: '95%',
+                        gridSize: 8,
+                        sizeRange: [16, 42],
+                        rotationRange: [0,0],
+                        layoutAnimation:false,  // 关闭布局动画稳定
+                        drawOutOfBound:false,
+                        textStyle: {
+                            fontWeight: 700, color: function () {
+                                var c = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#22d3ee', '#f59e0b', '#10b981', '#f97316', '#6366f1'];
+                                return c[Math.floor(Math.random() * c.length)];
+                            }
+                        },
+                        emphasis: {focus: 'self', textStyle: {shadowBlur: 6, shadowColor: 'rgba(0,0,0,.25)'}},
+                        data: wcData.map(function (d) {
+                            return {
+                                name: d.name,
+                                value: Math.round(1000 * d._w),
+                                raw: d.value
+                            }
+                        })
+                    }]
+                });
+
+                if (!bar) bar = echarts.init(document.getElementById('bar-a'));
+                var total = bx.length;
+                var showN = Math.min(visibleCountByScreen(), total);
+                var endIndex = Math.max(0, showN - 1);
+
+                bar.setOption({
+                    animationDuration: 600,
+                    grid: THEME.grid,
+                    toolbox: {right: 10, feature: {dataView: {readOnly: true}, restore: {}, saveAsImage: {}}},
+                    dataZoom: [
+                        {
+                            type: 'slider',
+                            bottom: 18,
+                            height: 16,
+                            handleSize: 16,
+                            brushSelect: false,
+                            borderColor: '#e5e7eb',
+                            backgroundColor: '#f1f5f9',
+                            startValue: 0,
+                            endValue: endIndex,
+                            minSpan: total ? Math.ceil((showN / total) * 100) : 0,
+                            maxSpan: 80
+                        },
+                        {type: 'inside', startValue: 0, endValue: endIndex}
+                    ],
+                    xAxis: {
+                        type: 'category',
+                        data: bx,
+                        axisLabel: {rotate: 30, interval: 0, color: THEME.axisCommon.axisLabel.color},
+                        axisLine: THEME.axisCommon.axisLine,
+                        axisTick: THEME.axisCommon.axisTick
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '%',
+                        min: 0,
+                        axisLine: {show: false},
+                        axisTick: {show: false},
+                        splitLine: THEME.splitLine,
+                        axisLabel: {
+                            formatter: function (v) {
+                                return v + '%';
+                            }, color: THEME.axisCommon.axisLabel.color
+                        }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        valueFormatter: function (v) {
+                            return v + '%';
+                        },
+                        backgroundColor: THEME.tooltip.backgroundColor,
+                        textStyle: THEME.tooltip.textStyle,
+                        padding: THEME.tooltip.padding
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: by,
+                        barMaxWidth: 28,
+                        itemStyle: {
+                            color: makeGradient(),
+                            borderRadius: [6, 6, 0, 0],
+                            shadowBlur: 4,
+                            shadowColor: 'rgba(99,102,241,.15)'
+                        },
+                        label: {
+                            show: true, position: 'top', formatter: function (p) {
+                                return (p.value != null ? p.value : '') + '%';
+                            }, fontSize: 11, color: '#374151'
+                        }
+                    }]
+                });
+
+                // 跟随容器 resize
+                window.addEventListener('resize', function () {
+                    applyCardHeight();
+                    wc && wc.resize();
+                    bar && bar.resize();
+                });
+            }
+
+            function pickLocusData(allData, locus) {
+                if (!allData) return null;
+                if (allData[locus]) return allData[locus];
+                if (Array.isArray(allData.wordcloud) || (allData.bar && (allData.bar.x || allData.bar.y))) return allData;
+                return null;
+            }
+
+            function buildApi(locus) {
+                var portal_url = "${context/@@plone_portal_state/portal_url}";
+                var base = portal_url + "/@@mysql_hla_avg";
+                var q = window.location.search || "";
+                var url = q ? (base + q) : (base + "?locus=" + locus);
+                url = url.replace(/([?&])locus=[^&]*/, '$1locus=' + locus);
+                if (url.indexOf('locus=') === -1) url += (url.indexOf('?') > -1 ? '&' : '?') + 'locus=' + locus;
+                return url;
+            }
+
+            function fetchAndRender(locus) {
+                var e = document.getElementById('err');
+                e.style.display = 'none';
+                e.textContent = '';
+                fetch(buildApi(locus), {credentials: 'same-origin'})
+                        .then(function (r) {
+                            return r.json();
+                        })
+                        .then(function (res) {
+                            if (!res || res.code !== 0) {
+                                var msg = (res && (res.msg || res.message)) || "接口返回错误";
+                                e.style.display = 'block';
+                                e.textContent = "加载失败：" + msg;
+                                return;
+                            }
+                            var locusData = pickLocusData(res.data || {}, locus) || {
+                                wordcloud: [],
+                                bar: {x: [], y: []}
+                            };
+                            renderChartsFor(locusData);
+                        })
+                        .catch(function (err) {
+                            e.style.display = 'block';
+                            e.textContent = "请求失败：" + (err && (err.message || err));
+                            if (window.console) {
+                                console.error(err);
+                            }
+                        });
+            }
+
+            // 初始化（注意：如果此模块一开始在 display:none 的 tab 里，外层需在切换后触发一次 window.resize）
+            applyCardHeight();
+            safeSetTitle('title-wc', ACTIVE + ' 分型 · 词云');
+            safeSetTitle('title-bar', ACTIVE + ' 分型 · 排名柱状图');
+            buildSeg();
+            fetchAndRender(ACTIVE);
+        })();
+    </script>
+</metal:module>

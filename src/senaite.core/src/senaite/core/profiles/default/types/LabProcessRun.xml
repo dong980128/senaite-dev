@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<object name="LabProcessRun" meta_type="Dexterity FTI" i18n:domain="senaite.core"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <property name="title">Lab Process Run</property>
+  <property name="description">Runtime instance of a LabProcess template</property>
+  <property name="schema">senaite.core.labprocess.content.labprocessrun.ILabProcessRunSchema</property>
+  <property name="klass">senaite.core.labprocess.content.labprocessrun.LabProcessRun</property>
+
+  <property name="factory">LabProcessRun</property>
+  <property name="add_view_expr">string:${folder_url}/++add++LabProcessRun</property>
+
+  <property name="global_allow">True</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <element value="LabTaskRun"/>
+  </property>
+
+  <property name="behaviors">
+    <element value="plone.basic"/>
+    <element value="plone.namefromtitle"/>
+  </property>
+</object>

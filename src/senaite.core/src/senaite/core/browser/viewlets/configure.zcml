@@ -1,0 +1,407 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:browser="http://namespaces.zope.org/browser"
+           i18n_domain="senaite.core">
+
+  <!-- package includes -->
+  <include package=".sample" />
+
+  <!-- Favicon Viewlet -->
+  <browser:viewlet
+      name="plone.links.favicon"
+      manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+      class=".favicon.FaviconViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Title Viewlet -->
+  <browser:viewlet
+      name="senaite.core.listings.title"
+      manager=".interfaces.IListingTableTitle"
+      class=".listings.ListingTableTitleViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Actions Viewlet -->
+  <browser:viewlet
+      name="senaite.core.listings.actions"
+      manager=".interfaces.IListingTableTitle"
+      class=".listings.ListingTableActionsViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Add Samples Viewlet -->
+  <browser:viewlet
+      name="senaite.core.listings.add_samples"
+      manager=".interfaces.IListingTableTitle"
+      class=".add_samples.AddSamplesViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Description Viewlet -->
+  <browser:viewlet
+      name="senaite.core.listings.description"
+      manager=".interfaces.IListingTableDescription"
+      class=".listings.ListingTableDescriptionViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Title Viewlet Manager -->
+  <browser:viewletManager
+      name="senaite.listingtabletitle"
+      provides=".interfaces.IListingTableTitle"
+      permission="zope2.View"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Description Viewlet Manager -->
+  <browser:viewletManager
+      name="senaite.listingtabledescription"
+      provides=".interfaces.IListingTableDescription"
+      permission="zope2.View"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Above Listing Viewlet Manager -->
+  <browser:viewletManager
+      name="senaite.abovelistingtable"
+      provides=".interfaces.IAboveListingTable"
+      permission="zope2.View"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Listing Table: Below Listing Viewlet Manager -->
+  <browser:viewletManager
+      name="senaite.belowlistingtable"
+      provides=".interfaces.IBelowListingTable"
+      permission="zope2.View"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Static Resources Viewlet -->
+  <browser:viewlet
+      name="senaite.core.static"
+      manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+      class=".resources.ResourcesViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Toolbar Viewlet Manager-->
+  <browser:viewletManager
+      name="plone.toolbar"
+      provides="plone.app.layout.viewlets.interfaces.IToolbar"
+      permission="zope2.View"
+      class=".toolbar.ToolbarViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Sidebar Viewlet Manager-->
+  <browser:viewletManager
+      name="senaite.sidebar"
+      provides=".interfaces.ISidebar"
+      permission="zope2.View"
+      class=".sidebar.SidebarViewletManager"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- The global sections -->
+  <browser:viewlet
+      name="plone.global_sections"
+      manager="plone.app.layout.viewlets.interfaces.IMainNavigation"
+      class=".sections.GlobalSectionsViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Content views (tabs) -->
+  <browser:viewlet
+      name="plone.contentviews"
+      manager="plone.app.layout.viewlets.interfaces.IToolbar"
+      class=".contentviews.ContentViewsViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Document actions -->
+  <browser:viewlet
+      name="plone.abovecontenttitle.documentactions"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContentTitle"
+      class=".document_actions.DocumentActionsViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Language Selector -->
+  <browser:viewlet
+      name="plone.app.i18n.locales.languageselector"
+      manager="plone.app.layout.viewlets.interfaces.IPortalHeader"
+      class=".languageselector.LanguageSelector"
+      permission="zope2.View"
+      template="templates/languageselector.pt"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Logo Viewlet -->
+  <browser:viewlet
+      name="plone.logo"
+      manager="plone.app.layout.viewlets.interfaces.IPortalHeader"
+      class=".logo.LogoViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Statusmessage Viewlet -->
+  <browser:viewlet
+      name="plone.globalstatusmessage"
+      manager="plone.app.layout.viewlets.interfaces.IGlobalStatusMessage"
+      class=".globalstatusmessage.GlobalStatusMessage"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Site Actions -->
+  <browser:viewlet
+      name="plone.site_actions"
+      manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+      class=".site_actions.SiteActionsViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Footer Viewlet -->
+  <browser:viewlet
+      name="plone.footer"
+      manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+      class=".footer.FooterViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Colophon Viewlet -->
+  <browser:viewlet
+      name="plone.colophon"
+      manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+      class=".colophon.ColophonViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Path Bar -->
+
+  <!-- Standard Breadcrumbs -->
+  <browser:viewlet
+      name="plone.path_bar"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      class=".path_bar.PathBarViewlet"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Hide BreadCrumbs for root view -->
+  <browser:viewlet
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="plone.path_bar"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      template="templates/blank.pt"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Hide BreadCrumbs for contents providing the `IHaveNoBreadCrumbs` interface -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IHaveNoBreadCrumbs"
+      name="plone.path_bar"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      template="templates/blank.pt"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- /Path Bar -->
+
+  <!-- AR Attachments Viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="sample_attachments"
+      class=".attachments.AttachmentsViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IBelowContentTitle"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Worksheet Attachments Viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IWorksheet"
+      name="worksheet_attachments"
+      class=".attachments.WorksheetAttachmentsViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IBelowContentTitle"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view inside the title macro -->
+  <browser:viewletManager
+      name="senaite.sampletitle"
+      provides=".interfaces.ISampleTitle"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view inside the title macro below the title -->
+  <browser:viewletManager
+      name="senaite.sampledescription"
+      provides=".interfaces.ISampleDescription"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view above all sections -->
+  <browser:viewletManager
+      name="senaite.sampleheader"
+      provides=".interfaces.ISampleHeader"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view located above sample sections -->
+  <browser:viewletManager
+      name="senaite.abovesamplesections"
+      provides=".interfaces.IAboveSampleSection"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager that sits in the sample view content area -->
+  <browser:viewletManager
+      name="senaite.samplesections"
+      provides=".interfaces.ISampleSection"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view located below sample sections -->
+  <browser:viewletManager
+      name="senaite.belowsamplesections"
+      provides=".interfaces.IBelowSampleSection"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Viewlet manager in sample view below all sections -->
+  <browser:viewletManager
+      name="senaite.samplefooter"
+      provides=".interfaces.ISampleFooter"
+      class="plone.app.viewletmanager.manager.OrderedViewletManager"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Sample title viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.sampletitle"
+      manager=".interfaces.ISampleTitle"
+      class=".sampletitle.SampleTitleViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample description viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.sampledescription"
+      manager=".interfaces.ISampleDescription"
+      class=".sampledescription.SampleDescriptionViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample header viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.sampleheader"
+      manager=".interfaces.ISampleHeader"
+      class=".sampleheader.SampleHeaderViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample Remarks viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.abovesamplesection.remarks"
+      manager=".interfaces.IAboveSampleSection"
+      class=".remarks.RemarksViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample section viewlet: lab analyses lisiting -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.samplesection.lab_analyses"
+      manager=".interfaces.ISampleSection"
+      class=".sampleanalyses.LabAnalysesViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Results interpretation viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.belowsamplesection.resultsinterpretation"
+      manager=".interfaces.IBelowSampleSection"
+      class=".resultsinterpretation.ResultsInterpretationViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+
+  <!-- Sample section viewlet: field analyses lisiting -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.samplesection.field_analyses"
+      manager=".interfaces.ISampleSection"
+      class=".sampleanalyses.FieldAnalysesViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample section viewlet: QC analyses listing -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.samplesection.qc_analyses"
+      manager=".interfaces.ISampleSection"
+      class=".sampleanalyses.QCAnalysesViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- Sample dispatched viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="sample_dispatched"
+      class=".sample_dispatched.SampleDispatchedViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      template="templates/sample_dispatched_viewlet.pt"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+  <!-- Auditlog viewlet -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAuditLog"
+      name="auditlog_disabled"
+      class=".auditlog.AuditlogDisabledViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      template="templates/auditlog_disabled.pt"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+</configure>

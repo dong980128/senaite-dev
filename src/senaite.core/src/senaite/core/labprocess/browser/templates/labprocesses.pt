@@ -1,0 +1,60 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+
+  <metal:main fill-slot="main">
+    <tal:block tal:define="
+        items python:view.folderitems();
+        cols python:getattr(view, 'columns', {})">
+
+      <h1 tal:content="python:getattr(view, 'title', u'Lab Processes')">Lab Processes</h1>
+      <p tal:condition="python:getattr(view, 'description', None)"
+         tal:content="python:view.description">All LabProcess items</p>
+
+      <table class="listing" style="width:100%; margin-top:10px;">
+        <thead>
+          <tr>
+            <th tal:content="python: cols.get('title', {}).get('title', u'流程')">流程</th>
+            <th tal:content="python: cols.get('version', {}).get('title', u'版本')">版本</th>
+            <th tal:content="python: cols.get('modified', {}).get('title', u'修改时间')">修改时间</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tal:row tal:repeat="it items"
+                   tal:define="
+                      obj python:it.get('obj', None);
+                      rep python:it.get('replace', {});
+                      title_html python:rep.get('title', None);
+                      title_text python:it.get('title', u'');
+                      version python:it.get('version', u'');
+                      mod python:it.get('modified', None);
+                      mod_str python:(mod and hasattr(mod,'strftime') and mod.strftime('%Y-%m-%d %H:%M')) or (mod and str(mod)) or u'';
+                   "
+                   tal:condition="obj">
+
+            <tr>
+              <td>
+                <tal:t tal:condition="title_html" tal:replace="structure title_html">Title Link</tal:t>
+                <tal:t tal:condition="not:title_html">
+                  <a tal:attributes="href string:${obj/absolute_url}/@@process"
+                     tal:content="title_text">Title</a>
+                </tal:t>
+              </td>
+
+              <td tal:content="version">v1.0</td>
+              <td tal:content="mod_str">2026-01-01 12:00</td>
+            </tr>
+
+          </tal:row>
+
+          <tr tal:condition="not:items">
+            <td colspan="3">暂无流程</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </tal:block>
+  </metal:main>
+</html>

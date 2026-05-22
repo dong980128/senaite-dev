@@ -1,0 +1,80 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <!-- HLA 表页面 -->
+  <browser:page
+      for="*"
+      name="hlav1-table"
+      class="senaite.core.mysql.browser.hlav1.HlaV1TableView"
+      template="browser/templates/hlav1.pt"
+      permission="zope2.View" />
+
+  <!--静态资源-->
+  <browser:resourceDirectory
+       name="senaite.core.mysql"
+       directory="browser/static"/>
+
+  <browser:page
+      for="*"
+      name="mysql-importer"
+      class="senaite.core.mysql.browser.importer.MysqlImporterView"
+      template="browser/templates/importer.pt"
+      permission="zope2.View" />
+
+  <!-- Dashboard 总页 -->
+  <browser:page
+      for="*"
+      name="lims-data-dashboard"
+      class="senaite.core.mysql.browser.dashboard.MySQLDashboard"
+      template="browser/templates/dashboard.pt"
+      permission="zope2.View" />
+
+    <browser:page
+      for="*"
+      name="hla_summary"
+      template="browser/templates/hla_summary.pt"
+      permission="zope2.View" />
+
+    <browser:page
+      for="*"
+      name="hla_search"
+      template="browser/templates/hla_search.pt"
+      permission="zope2.View" />
+
+    <browser:page
+    for="*"
+    name="hla_type"
+    template="browser/templates/hla_type.pt"
+    permission="zope2.View" />
+
+  <browser:page
+    for="*"
+    name="mysql_hla_avg"
+    class="senaite.core.mysql.browser.api.APIHlaAvg"
+    permission="zope2.View" />
+
+  <browser:page
+    for="*"
+    name="mysql_hla_haplotype"
+    class="senaite.core.mysql.browser.api.APIHLASearchByHaplotype"
+    permission="zope2.View" />
+
+   <browser:page
+      for="*"
+      name="mysql_hl_tumorType"
+      class="senaite.core.mysql.browser.api.APIHlTumorType"
+      permission="zope2.View" />
+
+  <browser:page
+      for="*"
+      name="mysql_hl_populations"
+      class="senaite.core.mysql.browser.api.APIHlPopulations"
+      permission="zope2.View" />
+
+  <browser:page
+      for="*"
+      name="mysql_hl_haplotypes"
+      class="senaite.core.mysql.browser.api.APIHlHaplotype"
+      permission="zope2.View" />
+</configure>

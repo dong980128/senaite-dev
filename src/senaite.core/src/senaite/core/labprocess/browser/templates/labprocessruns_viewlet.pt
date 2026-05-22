@@ -1,0 +1,1323 @@
+<div class="panel panel-default" id="labprocessruns-panel">
+    <div class="panel-heading">
+        <h3 class="panel-title">实验流程</h3>
+    </div>
+
+    <div class="panel-body"
+             tal:define="runs view/runs;
+            processes view/get_processes;
+            current_process view/get_current_process;
+            has_valid_runs python: bool(runs);
+            member python: context.portal_membership.getAuthenticatedMember();
+            can_manage python: bool({'Manager','LabManager'} & set(member.getRolesInContext(context)))">
+
+        <tal:has-process tal:condition="python: can_manage and bool(processes)">
+            <form method="post"
+                     tal:attributes="action string:${context/absolute_url}/@@create-labprocessrun"
+                  style="margin-bottom:10px;" id="lp-create-form">
+                <tal:block tal:replace="structure context/@@authenticator" />
+
+                <!-- 隐藏的真实 select，提交用 -->
+                <select name="process_uid" id="lp-process-select" style="display:none;">
+                    <option value=""></option>
+                    <option tal:repeat="p processes"
+                             tal:attributes="value p/uid; data-title p/title"
+                             tal:content="p/title">Process
+                    </option>
+                </select>
+
+                <!-- 标签式选择器 -->
+                <div class="lp-process-picker" id="lp-process-picker">
+                    <div class="lp-selected-tag" id="lp-selected-tag"
+                             tal:attributes="style python: 'display:none' if not current_process else None">
+                        <span class="lp-tag-label" id="lp-tag-label"
+                                 tal:content="python: current_process.get('title','') if current_process else ''"></span>
+                        <a href="#" class="lp-tag-remove" id="lp-tag-remove" title="取消选择">&#x2715;</a>
+                    </div>
+                    <tal:init tal:condition="current_process">
+                        <input type="hidden" name="_lp_init_uid"
+                                 tal:attributes="value python: current_process.get('uid','')" />
+                    </tal:init>
+                    <div class="lp-search-box" id="lp-search-box"
+                             tal:attributes="style python: 'display:none' if current_process else None">
+                        <input type="text" id="lp-search-input" class="lp-search-input"
+                               placeholder="-- 请选择工作流程 --" autocomplete="off"/>
+                        <a href="#" class="lp-search-clear" id="lp-search-clear" style="display:none;">&#x2715;</a>
+                        <span class="lp-search-icon">&#128269;</span>
+                        <ul class="lp-dropdown" id="lp-dropdown" style="display:none;"></ul>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm lp-create-btn"
+                            id="lp-create-btn"
+                             tal:attributes="disabled python: 'disabled' if has_valid_runs else None"
+                            style="margin-left:8px;">
+                        创建 流程
+                    </button>
+                </div>
+            </form>
+        </tal:has-process>
+        <div class="lp-filter-bar" style="margin:8px 0;"
+                 tal:condition="can_manage">
+            <a class="btn btn-default btn-xs"
+                     tal:attributes="href string:${context/absolute_url}?lp_runs_filter=valid#labprocessruns-panel">有效</a>
+            <a class="btn btn-default btn-xs"
+                     tal:attributes="href string:${context/absolute_url}?lp_runs_filter=invalid#labprocessruns-panel">无效</a>
+            <a class="btn btn-default btn-xs"
+                     tal:attributes="href string:${context/absolute_url}?lp_runs_filter=all#labprocessruns-panel">所有</a>
+        </div>
+        <tal:empty tal:condition="not:runs">
+            <em>暂无 LabProcessRun（请先创建 流程）</em>
+        </tal:empty>
+
+        <tal:has tal:condition="runs">
+            <table class="table table-striped table-condensed">
+                <thead tal:condition="can_manage">
+                <tr>
+                    <th>流程</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th style="width:70px;">操作</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tal:run tal:repeat="r runs">
+
+                    <tr tal:condition="can_manage">
+                        <td>
+                            <a tal:attributes="href r/url" tal:content="r/title">流程</a>
+                        </td>
+                        <td tal:content="r/state">state</td>
+                        <td tal:content="python: r.get('created') and r.get('created').ISO() or ''">created</td>
+                        <td>
+                            <tal:can tal:condition="python: r.get('can_cancel')">
+                                <form method="post"
+                                         tal:attributes="action string:${r/url}/@@cancel-processrun"
+                                      style="display:inline-block;">
+                                    <tal:block tal:replace="structure context/@@authenticator" />
+                                    <button type="submit" class="btn btn-xs btn-danger"
+                                            title="撤销该 流程"
+                                            onclick="return confirm('确认撤销该 流程？撤销后进入无效列表。');">X
+                                    </button>
+                                </form>
+                            </tal:can>
+                            <tal:nocan tal:condition="python: not r.get('can_cancel')">
+                                <span class="text-muted">-</span>
+                            </tal:nocan>
+                        </td>
+                    </tr>
+                    <tr tal:condition="python: r.get('taskruns')">
+                        <td colspan="4" style="padding-left:22px;">
+
+                            <table class="table table-bordered table-condensed lp-taskruns-table"
+                                   style="margin:6px 0 0 0; width:100%; table-layout:fixed;">
+                                <thead>
+                                <tr>
+                                    <th style="width:60px;">阶段</th>
+                                    <th>任务</th>
+                                    <th style="width:90px;">模式</th>
+                                    <th>检测服务/动态操作</th>
+                                    <th style="width:220px;">负责人</th>
+                                    <th style="width:120px;">状态</th>
+                                    <th style="width:160px;">操作</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+
+                                <tal:task tal:repeat="t python: r.get('taskruns')">
+
+                                    <tr tal:attributes="class python: t.get('is_mine') and 'info' or ''">
+                                        <td tal:content="t/step">01</td>
+                                        <td tal:content="t/title">任务</td>
+                                        <td tal:content="t/mode">analysis</td>
+
+                                        <td>
+                                            <tal:when tal:condition="python: t.get('mode') == 'analysis'">
+                                                <div>
+                                                    <span class="text-muted"></span>
+                                                    <span tal:condition="t/services_text" tal:content="t/services_text">services</span>
+                                                    <span tal:condition="not:t/services_text">-</span>
+                                                </div>
+                                            </tal:when>
+                                            <tal:else tal:condition="python: t.get('mode') != 'analysis'">
+                                                <span tal:content="t/handler">handler</span>
+                                            </tal:else>
+                                        </td>
+
+                                        <td>
+                                            <span tal:content="t/users_text">users</span>
+                                            <tal:mine tal:condition="t/is_mine">
+                                                <span class="label label-success"
+                                                      style="margin-left:6px;"></span>
+                                            </tal:mine>
+                                        </td>
+
+                                        <td tal:content="python: t.get('review_state') or t.get('status')" />
+
+                                        <td>
+                                            <tal:can tal:condition="python: t.get('is_mine') and t.get('can_complete')">
+                                                <form method="post"
+                                                         tal:attributes="action string:${t/url}/@@advance-taskrun"
+                                                      style="display:inline-block;"
+                                                      class="lp-complete-form"
+                                                         tal:attributes="data-task-uid python: t.get('uid') or '';
+                                                        data-mode python: t.get('mode') or ''">
+                                                    <tal:block tal:replace="structure context/@@authenticator" />
+                                                    <button type="submit"
+                                                            class="btn btn-xs btn-success lp-complete-btn">
+                                                        完成
+                                                    </button>
+                                                </form>
+                                            </tal:can>
+                                            <tal:nocan tal:condition="python: not (t.get('is_mine') and (t.get('status') or '').lower() == 'running')">
+                                                <span class="text-muted">-</span>
+                                            </tal:nocan>
+                                        </td>
+                                    </tr>
+
+                                    <tal:analyses tal:condition="python: t.get('mode') == 'analysis'"
+                                             tal:define="full_listing python: view.render_full_task_analyses(t, r.get('uid')) or '';">
+
+                                        <tr tal:condition="python: full_listing" class="task-analyses-row">
+                                            <td colspan="7" style="padding:8px; overflow:hidden;">
+                                                <div class="lp-analyses-wrap">
+                                                    <tal:block tal:replace="structure python: full_listing" />
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr tal:condition="python: (not full_listing) and analyses"
+                                                class="task-analyses-row">
+                                            <td colspan="7" style="padding:8px; overflow:hidden;">
+                                                <div class="lp-analyses-wrap">
+                                                    <table class="table table-condensed table-striped"
+                                                           style="margin:0; background:#fff;">
+                                                    </table>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tal:analyses>
+                                    <tr class="lp-wf-row" tal:condition="python: t.get('downstream')">
+                                        <td colspan="7">
+                                            <div class="lp-wf-downstream-bar">
+                                                <tal:node tal:repeat="d python: t.get('downstream')">
+                                                    <tal:click tal:condition="python: d.get('enabled') and (d.get('id') or '').lower() != 'reinstate'">
+                                                        <form method="post" tal:attributes="action string:${t/url}/@@advance-taskrun"
+                                                              class="lp-wf-act">
+
+                                                            <input type="hidden"
+                                                                   name="_authenticator" tal:attributes="value context/@@authenticator" />
+                                                            <tal:block tal:replace="structure context/@@authenticator" />
+                                                            <input type="hidden"
+                                                                   name="transition" tal:attributes="value python: d.get('id')"/>
+                                                            <button type="submit"
+                                                                     tal:attributes="class python: 'btn btn-xs ' + ({'complete': 'btn-success', 'retract': 'btn-danger'}.get((d.get('id') or '').lower(), 'btn-default'))"
+                                                                     tal:content="python: d.get('title') or d.get('id')">
+                                                                Complete
+                                                            </button>
+                                                        </form>
+                                                    </tal:click>
+
+                                                    <tal:noclick tal:condition="python: not d.get('enabled') and (d.get('id') or '').lower() != 'reinstate'">
+                                              <span class="lp-wf-pill lp-wf-pill-disabled"
+                                                       tal:content="python: d.get('title') or d.get('id')">Complete</span>
+                                                    </tal:noclick>
+
+                                                </tal:node>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tal:task>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+
+                </tal:run>
+                </tbody>
+            </table>
+        </tal:has>
+
+        <style type="text/css">
+            /* ── 整体面板 ── */
+            #labprocessruns-panel {
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+                margin-bottom: 18px;
+            }
+
+            #labprocessruns-panel .panel-heading {
+                background: linear-gradient(135deg, #f8f9fa 0%, #eef1f4 100%);
+                border-bottom: 1px solid #dde1e6;
+                border-radius: 6px 6px 0 0;
+                padding: 10px 16px;
+            }
+
+            #labprocessruns-panel .panel-title {
+                font-size: 15px;
+                font-weight: 600;
+                color: #2c3e50;
+                letter-spacing: .3px;
+            }
+
+            #labprocessruns-panel .panel-body {
+                padding: 14px 16px;
+                background: #fff;
+            }
+
+            /* ── 过滤按钮组 ── */
+            #labprocessruns-panel .lp-filter-bar {
+                display: flex;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+
+            #labprocessruns-panel .lp-filter-bar .btn {
+                border-radius: 20px;
+                padding: 3px 14px;
+                font-size: 12px;
+                font-weight: 500;
+                border: 1px solid #c8cdd5;
+                color: #555;
+                background: #fff;
+                transition: all .15s;
+            }
+
+            #labprocessruns-panel .lp-filter-bar .btn:hover {
+                background: #3498db;
+                border-color: #2980b9;
+                color: #fff;
+            }
+
+            /* ── 外层 流程 表格 ── */
+            #labprocessruns-panel > .panel-body > .table {
+                border-radius: 5px;
+                border: 1px solid #dde1e6;
+                margin-bottom: 0;
+                overflow: hidden;
+            }
+
+            #labprocessruns-panel > .panel-body > .table thead th {
+                font-size: 12px;
+                font-weight: 700;
+                color: #4a5568;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                padding: 9px 12px;
+                background: #f0f3f7;
+                border-bottom: 2px solid #dde1e6;
+            }
+
+            #labprocessruns-panel > .panel-body > .table tbody td {
+                padding: 10px 12px;
+                vertical-align: middle;
+                font-size: 13px;
+                color: #34495e;
+            }
+
+            #labprocessruns-panel > .panel-body > .table tbody tr:hover > td {
+                background: #f7faff !important;
+            }
+
+            #labprocessruns-panel > .panel-body > .table tbody td a {
+                color: #2980b9;
+                font-weight: 600;
+                text-decoration: none;
+            }
+
+            #labprocessruns-panel > .panel-body > .table tbody td a:hover {
+                text-decoration: underline;
+            }
+
+            /* ── TaskRun 内嵌区域 ── */
+            #labprocessruns-panel .lp-taskruns-table {
+                width: 100%;
+                table-layout: fixed;
+                margin: 10px 0;
+                border-radius: 5px;
+                border: 1px solid #dde3ea;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+            }
+
+            #labprocessruns-panel .lp-taskruns-table thead th {
+                font-size: 11px;
+                font-weight: 700;
+                color: #5a6478;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                padding: 8px 10px;
+                background: #e8ecf2;
+                border-bottom: 1px solid #cdd3de;
+            }
+
+            #labprocessruns-panel .lp-taskruns-table tbody tr.info > td {
+                background: #edf6ff;
+            }
+
+            #labprocessruns-panel .lp-taskruns-table tbody td {
+                padding: 9px 10px;
+                vertical-align: middle;
+                font-size: 13px;
+                color: #34495e;
+            }
+
+            #labprocessruns-panel .lp-taskruns-table tbody tr:hover > td {
+                background: #f0f6ff !important;
+            }
+
+            /* ── 分析列表嵌套 ── */
+            #labprocessruns-panel tr.task-analyses-row > td {
+                background: #fff;
+                border-top: none;
+            }
+
+            #labprocessruns-panel .lp-analyses-wrap {
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            #labprocessruns-panel .lp-analyses-wrap table {
+                display: inline-block;
+                width: max-content;
+                min-width: 100%;
+            }
+
+            #labprocessruns-panel .task-analyses-row .table.contentstable,
+            #labprocessruns-panel .task-analyses-row .table.contentstable th,
+            #labprocessruns-panel .task-analyses-row .table.contentstable td {
+                box-shadow: none !important;
+                outline: none !important;
+            }
+
+            #labprocessruns-panel .task-analyses-row .table.contentstable th,
+            #labprocessruns-panel .task-analyses-row .table.contentstable td {
+                border: 0 !important;
+                box-shadow: none !important;
+                outline: none !important;
+            }
+
+            #labprocessruns-panel .task-analyses-row .table.contentstable {
+                border-left: 0 !important;
+                border-right: 0 !important;
+            }
+
+            /* ── 工作流按钮行 ── */
+            #labprocessruns-panel tr.lp-wf-row td {
+                padding: 6px 10px 10px 10px;
+                background: #f7f9fc;
+                border-top: 1px dashed #dde3ea;
+            }
+
+            #labprocessruns-panel .lp-wf-downstream-bar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                align-items: center;
+            }
+
+            #labprocessruns-panel .lp-wf-act {
+                display: inline-block;
+                margin: 0;
+            }
+
+            #labprocessruns-panel .lp-wf-act button {
+                padding: 4px 12px;
+                line-height: 1.5;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+                letter-spacing: .2px;
+                transition: opacity .15s;
+            }
+
+            #labprocessruns-panel .lp-wf-act button:hover {
+                opacity: .85;
+            }
+
+            #labprocessruns-panel .lp-wf-pill {
+                display: inline-block;
+                padding: 4px 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 12px;
+                background: #f7f7f7;
+                color: #666;
+            }
+
+            #labprocessruns-panel .lp-wf-pill-disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            #labprocessruns-panel .lp-wf-arrow {
+                margin: 0 4px;
+                color: #999;
+            }
+
+            /* ── 标签式流程选择器 ── */
+            #labprocessruns-panel .lp-process-picker {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: 10px;
+            }
+
+            #labprocessruns-panel .lp-selected-tag {
+                display: inline-flex;
+                align-items: center;
+                background: #e8f4fd;
+                border: 1px solid #aed6f1;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-size: 13px;
+                color: #1a6fa0;
+                font-weight: 500;
+            }
+
+            #labprocessruns-panel .lp-tag-remove {
+                margin-left: 8px;
+                color: #888;
+                text-decoration: none;
+                font-size: 13px;
+                line-height: 1;
+                transition: color .15s;
+            }
+
+            #labprocessruns-panel .lp-tag-remove:hover {
+                color: #c0392b;
+            }
+
+            #labprocessruns-panel .lp-search-box {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                border: 1px solid #c8cdd5;
+                border-radius: 4px;
+                background: #fff;
+                padding: 0 6px 0 8px;
+                min-width: 220px;
+            }
+
+            #labprocessruns-panel .lp-search-box:focus-within {
+                border-color: #3498db;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, .15);
+            }
+
+            #labprocessruns-panel .lp-search-input {
+                border: none;
+                outline: none;
+                padding: 5px 0;
+                font-size: 13px;
+                color: #34495e;
+                background: transparent;
+                flex: 1;
+                min-width: 150px;
+            }
+
+            #labprocessruns-panel .lp-search-clear,
+            #labprocessruns-panel .lp-search-icon {
+                color: #999;
+                font-size: 13px;
+                text-decoration: none;
+                padding: 0 2px;
+                cursor: pointer;
+            }
+
+            #labprocessruns-panel .lp-search-clear:hover {
+                color: #c0392b;
+            }
+
+            #labprocessruns-panel .lp-dropdown {
+                position: absolute;
+                top: calc(100% + 4px);
+                left: -1px;
+                right: -1px;
+                background: #fff;
+                border: 1px solid #d0d6de;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+                list-style: none;
+                margin: 0;
+                padding: 4px 0;
+                z-index: 9999;
+                max-height: 220px;
+                overflow-y: auto;
+            }
+
+            #labprocessruns-panel .lp-dropdown li {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 7px 12px;
+                font-size: 13px;
+                cursor: pointer;
+                color: #34495e;
+            }
+
+            #labprocessruns-panel .lp-dropdown li:hover,
+            #labprocessruns-panel .lp-dropdown li.active {
+                background: #eaf4ff;
+                color: #1a6fa0;
+            }
+
+            #labprocessruns-panel .lp-dropdown li .lp-kw {
+                font-size: 11px;
+                color: #aaa;
+                margin-left: 8px;
+            }
+
+            #labprocessruns-panel .lp-create-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            /* ---- sc_library_prep 分组表单 ---- */
+            .lp-library-prep-form {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                margin: 8px 0;
+                background: #fafafa;
+            }
+
+            .lp-lib-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 12px;
+                background: #e8f4f8;
+                border-bottom: 1px solid #ddd;
+                border-radius: 4px 4px 0 0;
+            }
+
+            .lp-lib-title {
+                font-weight: bold;
+                color: #2c6e8a;
+            }
+
+            .lp-lib-groups {
+                padding: 10px 12px;
+            }
+
+            .lp-lib-group {
+                margin-bottom: 12px;
+            }
+
+            .lp-lib-group-title {
+                font-size: 12px;
+                font-weight: bold;
+                color: #555;
+                background: #eef2f5;
+                padding: 4px 8px;
+                border-left: 3px solid #3498db;
+                margin-bottom: 6px;
+            }
+
+            .lp-lib-group-fields {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .lp-lib-field {
+                display: flex;
+                flex-direction: column;
+                min-width: 140px;
+                flex: 1;
+            }
+
+            .lp-lib-field label {
+                font-size: 11px;
+                color: #666;
+                margin-bottom: 2px;
+            }
+
+            .lp-lib-field .lp-lib-input {
+                font-size: 12px;
+                padding: 3px 6px;
+                height: 28px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+            }
+
+            .lp-lib-field .lp-lib-input:focus {
+                border-color: #3498db;
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
+
+            .lp-lib-save-btn {
+                margin-left: 10px;
+            }
+
+            .lp-lib-save-btn.saving {
+                opacity: 0.6;
+                pointer-events: none;
+            }
+
+            .lp-lib-saved-msg {
+                color: #27ae60;
+                font-size: 12px;
+                margin-left: 8px;
+                display: none;
+            }
+
+            /* ---- sc_library_prep 分组字段行 ---- */
+            .lp-grouped-fields-row td {
+                padding: 4px 8px !important;
+                background: #fff;
+            }
+
+            .lp-grouped-fields-wrap {
+            }
+
+            .lp-grouped-fields-group {
+                margin-bottom: 4px;
+            }
+
+            .lp-grouped-fields-group:last-child {
+                margin-bottom: 0;
+            }
+
+            .lp-grouped-fields-title {
+                font-size: 11px;
+                font-weight: bold;
+                color: #555;
+                padding: 1px 0;
+                margin-bottom: 2px;
+            }
+
+            .lp-grouped-fields-cells {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .lp-grouped-field {
+                display: flex;
+                flex-direction: column;
+                width: 150px;
+            }
+
+            .lp-grouped-field-label {
+                font-size: 11px;
+                color: #888;
+                text-align: center;
+            }
+
+            .lp-grouped-field-val {
+                font-size: 12px;
+                color: #333;
+                padding: 2px 4px;
+                height: 24px;
+                line-height: 20px;
+                text-align: center;
+                display: block;
+                width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .lp-grouped-field-input {
+                height: 24px;
+                padding: 0 4px;
+                border: 1px solid #ced4da;
+                font-size: 12px;
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            /* 选择TCR数据的 listing 撑满容器 */
+            #labprocessruns-panel .lp-analyses-wrap {
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            #labprocessruns-panel .lp-analyses-wrap table {
+                display: table !important;
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+
+            /* TCR 选择器展开行撑满 */
+            #labprocessruns-panel .tcr-selector-row > td {
+                padding: 0 !important;
+            }
+
+            #labprocessruns-panel .lp-tcr-selector {
+                width: 100% !important;
+                max-width: none !important;
+                overflow-x: visible !important;
+            }
+
+            #labprocessruns-panel .lp-tcr-selector table {
+                width: 100% !important;
+                white-space: nowrap;
+            }
+
+            #labprocessruns-panel .tcr-preparation-row > td {
+                padding: 0 !important;
+            }
+
+            #labprocessruns-panel .lp-tcr-preparation {
+                width: calc(100vw - 120px) !important;
+                max-width: none !important;
+                overflow-x: auto !important;
+            }
+        </style>
+
+        <!-- 请检信息 Modal 组件（提供 LPConditionsModal 全局对象） -->
+        <tal:block tal:replace="structure context/@@conditions_modal" />
+
+        <!--
+            动态生成 CONDITIONAL_FIELDS 配置：
+            从所有 TaskRun 的 conditional_services 收集，输出为 JS 变量。
+            必须在 script 标签外用 tal 生成，script 内不支持 tal 标签。
+        -->
+        <tal:conditional-config tal:define="
+            all_cs python: [
+                dict(
+                    keyword=cs.get('condition_field', ''),
+                    trigger_service=cs.get('trigger_service', ''),
+                    condition_value=cs.get('condition_value', ''),
+                    service=cs.get('service', '')
+                )
+                for r in runs
+                for t in (r.get('taskruns') or [])
+                for cs in (t.get('conditional_services') or [])
+                if cs.get('condition_field') and cs.get('trigger_service')
+            ];
+            all_cs_json python: __import__('json').dumps(all_cs, ensure_ascii=False)">
+            <script type="text/javascript">
+                var LP_CONDITIONAL_FIELDS = <tal:v tal:replace="structure python: all_cs_json"/>;
+            </script>
+        </tal:conditional-config>
+
+        <script type="text/javascript">
+            (function ($) {
+
+                /* ── 标签式流程选择器 ── */
+                (function () {
+                    var $select = $("#lp-process-select");
+                    var $input = $("#lp-search-input");
+                    var $dropdown = $("#lp-dropdown");
+                    var $tag = $("#lp-selected-tag");
+                    var $tagLabel = $("#lp-tag-label");
+                    var $searchBox = $("#lp-search-box");
+                    var $clear = $("#lp-search-clear");
+                    var $createBtn = $("#lp-create-btn");
+
+                    // 收集所有选项
+                    var options = [];
+                    $select.find("option[value!='']").each(function () {
+                        options.push({uid: $(this).val(), title: $(this).text().trim()});
+                    });
+
+                    function renderDropdown(keyword) {
+                        $dropdown.empty();
+                        var kw = (keyword || "").toLowerCase().trim();
+                        var filtered = kw ? options.filter(function (o) {
+                            return o.title.toLowerCase().indexOf(kw) >= 0;
+                        }) : options;
+                        if (!filtered.length) {
+                            $dropdown.append('<li style="color:#aaa;cursor:default;">无匹配结果</li>');
+                        } else {
+                            $.each(filtered, function (_, o) {
+                                var $li = $('<li data-uid="' + o.uid + '"><span>' + o.title + '</span></li>');
+                                $li.on("click", function () {
+                                    selectOption(o);
+                                });
+                                $dropdown.append($li);
+                            });
+                        }
+                        $dropdown.show();
+                    }
+
+                    function selectOption(o) {
+                        $select.val(o.uid);
+                        $tagLabel.text(o.title);
+                        $tag.show();
+                        $searchBox.hide();
+                        $createBtn.prop("disabled", false);
+                        $dropdown.hide();
+                        $input.val("");
+                    }
+
+                    function clearSelection() {
+                        $select.val("");
+                        $tag.hide();
+                        $searchBox.show();
+                        $createBtn.prop("disabled", true);
+                        $input.val("");
+                        $clear.hide();
+                        $dropdown.hide();
+                    }
+
+                    // 初始化：若服务端已渲染标签（有已选流程），同步 select 值
+                    (function () {
+                        var $initInput = $("input[name='_lp_init_uid']");
+                        if ($initInput.length && $initInput.val()) {
+                            $select.val($initInput.val());
+                            $createBtn.prop("disabled", false);
+                        }
+                    })();
+
+                    // 点击 X 取消选择
+                    $("#lp-tag-remove").on("click", function (e) {
+                        e.preventDefault();
+                        clearSelection();
+                        $input.focus();
+                    });
+
+                    // 输入框获得焦点显示下拉
+                    $input.on("focus", function () {
+                        renderDropdown($input.val());
+                    });
+
+                    // 输入过滤
+                    $input.on("input", function () {
+                        var v = $input.val();
+                        $clear.toggle(v.length > 0);
+                        renderDropdown(v);
+                    });
+
+                    // 清除输入
+                    $clear.on("click", function (e) {
+                        e.preventDefault();
+                        $input.val("").focus();
+                        $clear.hide();
+                        renderDropdown("");
+                    });
+
+                    // 点击外部关闭下拉
+                    $(document).on("click", function (e) {
+                        if (!$(e.target).closest("#lp-process-picker").length) {
+                            $dropdown.hide();
+                        }
+                    });
+                })();
+
+                // ============================================================
+                // 请检信息 Modal（由 conditions_modal.pt 提供 LPConditionsModal 全局对象）
+                // ============================================================
+                (function () {
+                    var $createForm = $("#lp-create-form");
+                    if (!$createForm.length) return;
+
+                    var arUrl = (function () {
+                        var href = window.location.href.split("?")[0].split("#")[0];
+                        return href.replace(/\/@@[^\/]*$/, "");
+                    })();
+
+                    $createForm.on("submit", function (e) {
+                        var processUid = $("#lp-process-select").val();
+                        if (!processUid) return;
+                        e.preventDefault();
+
+                        LPConditionsModal.open({
+                            processUid: processUid,
+                            arUrl: arUrl,
+                            onConfirm: function (values) {
+                                $createForm.find("input[name='condition_values']").remove();
+                                $('<input type="hidden" name="condition_values"/>')
+                                    .val(JSON.stringify(values))
+                                    .appendTo($createForm);
+                                $createForm[0].submit();
+                            }
+                        });
+                    });
+                })();
+
+                "use strict";
+
+                function initEmbeddedListing($wrap) {
+                    var fid = $wrap.data("form-id");
+                    if (!fid) return;
+                    var analysisUids = $wrap.data("analysis-uids") || "";
+                    var taskUid = $wrap.data("taskrun-uid") || "";
+                    var processUid = $wrap.data("processrun-uid") || "";
+
+                    var $container = $wrap.find(".listing-container[data-form-id='" + fid + "']");
+                    if (!$container.length) {
+                        $container = $wrap.find(".listing-container");
+                    }
+                    if (!$container.length) return;
+                    if ($wrap.data("lp-inited")) return;
+                    $wrap.data("lp-inited", 1);
+                    $container.attr("data-form-id", fid);
+                    var $form = $container.closest("form");
+                    if (!$form.length) {
+                        $form = $container.find("form").first();
+                    }
+                    if ($form.length) {
+                        // form 基本字段
+                        $form.find("input[name='form_id']").remove();
+                        $form.find("input[name='listing_form_id']").remove();
+                        $form.prepend('<input type="hidden" name="form_id" value="' + fid + '"/>');
+                        $form.prepend('<input type="hidden" name="listing_form_id" value="' + fid + '"/>');
+
+                        // 给后端识别用的 fid_analysis_uids
+                        var key = fid + "_analysis_uids";
+                        var $au = $form.find("input[name='" + key + "']");
+                        if (!$au.length) {
+                            $form.prepend('<input type="hidden" name="' + key + '" value=""/>');
+                            $au = $form.find("input[name='" + key + "']");
+                        }
+                        $au.val(analysisUids);
+                        var k1 = fid + "_taskrun_uid";
+                        var k2 = fid + "_processrun_uid";
+                        if (!$form.find("input[name='" + k1 + "']").length) {
+                            $form.prepend('<input type="hidden" name="' + k1 + '" value=""/>');
+                        }
+                        if (!$form.find("input[name='" + k2 + "']").length) {
+                            $form.prepend('<input type="hidden" name="' + k2 + '" value=""/>');
+                        }
+                        $form.find("input[name='" + k1 + "']").val(taskUid);
+                        $form.find("input[name='" + k2 + "']").val(processUid);
+                    }
+
+                    var ajaxUrl = $wrap.data("ajax-url") || "";
+                    if (ajaxUrl) {
+                        $container.attr("data-url", ajaxUrl);
+                        $container.attr("data-ajax-url", ajaxUrl);
+                        $container.attr("data-ajax_url", ajaxUrl);
+                        $container.attr("ajax_url", ajaxUrl);
+                    }
+
+                    $container.on("click", ".review_state_tab a, [data-review-state]", function () {
+                        var rs = $(this).data("review-state") || $(this).closest("[data-review-state]").data("review-state") || "default";
+                        var $f = $container.closest("form");
+                        if (!$f.length) $f = $container.find("form").first();
+                        $f.find("input[name='review_state']").remove();
+                        $f.prepend('<input type="hidden" name="review_state" value="' + rs + '"/>');
+                    });
+                    // 同时拦截 AJAX 请求，确保 review_state 始终跟随
+                    $container.on("click", ".nav-tabs a[href], .nav-pills a[href]", function () {
+                        var href = $(this).attr("href") || "";
+                        var rs = href.replace(/^#/, "") || "default";
+                        var $f = $container.closest("form");
+                        if (!$f.length) $f = $container.find("form").first();
+                        $f.find("input[name='review_state']").remove();
+                        $f.prepend('<input type="hidden" name="review_state" value="' + rs + '"/>');
+                    });
+
+                    // --- Compatibility init ---
+                    try {
+                        if (window.Listing && typeof window.Listing.init === "function") {
+                            window.Listing.init($container);
+                            return;
+                        }
+                    } catch (e) {
+                    }
+
+                    try {
+                        if (window.senaite && window.senaite.listing && typeof window.senaite.listing.init === "function") {
+                            window.senaite.listing.init($container);
+                            return;
+                        }
+                    } catch (e) {
+                    }
+
+                    try {
+                        $container.trigger("listing:init");
+                        $container.trigger("listing:load");
+                    } catch (e) {
+                    }
+                }
+
+                function initAll() {
+                    $(".lp-embedded-listing").each(function () {
+                        initEmbeddedListing($(this));
+                    });
+                }
+
+                // -------------------------------------------------------
+                // Complete 按钮拦截：mode=analysis 时先保存 Analysis 表单
+                // -------------------------------------------------------
+                function saveAnalysisAndComplete($completeForm) {
+                    var taskUid = $completeForm.data("task-uid") || "";
+                    var mode = $completeForm.data("mode") || "";
+
+                    // custom 模式或没有 task-uid，直接提交
+                    if (mode !== "analysis" || !taskUid) {
+                        $completeForm[0].submit();
+                        return;
+                    }
+
+                    var $wrap = $("[data-taskrun-uid='" + taskUid + "'].lp-embedded-listing");
+                    if (!$wrap.length) {
+                        console.warn("[LP] no listing wrap for task-uid=" + taskUid + ", skip save");
+                        $completeForm[0].submit();
+                        return;
+                    }
+
+                    // 找 listing里的save按钮
+                    var $saveBtn = $wrap.find("button#ajax_save_selection, button.btn-primary").first();
+                    if (!$saveBtn.length) {
+                        console.warn("[LP] no save button found, skip save and complete directly");
+                        $completeForm[0].submit();
+                        return;
+                    }
+
+                    console.info("[LP] saving analyses before complete, task-uid=" + taskUid);
+
+                    // 监听保存完成后再提交 complete
+                    var submitted = false;
+                    $(document).one("ajaxComplete", function () {
+                        if (!submitted) {
+                            submitted = true;
+                            console.info("[LP] save done, now submitting complete");
+                            $completeForm[0].submit();
+                        }
+                    });
+
+                    // 触发保存
+                    $saveBtn.trigger("click");
+                }
+
+                $(document).on("click", ".lp-complete-btn", function (e) {
+                    e.preventDefault();
+                    var $form = $(this).closest(".lp-complete-form");
+                    var mode = $form.data("mode") || "";
+
+                    if (mode === "analysis") {
+                        // analysis 模式：先保存再 complete
+                        saveAnalysisAndComplete($form);
+                    } else {
+                        // 其他模式：直接 confirm 后提交
+                        if (confirm("确认完成当前任务并推进下一步？")) {
+                            $form[0].submit();
+                        }
+                    }
+                });
+
+                $(document).ready(function () {
+                    initAll();
+
+                    // 监听动态新增的 lp-embedded-listing 节点
+                    var observer = new MutationObserver(function (mutations) {
+                        mutations.forEach(function (mutation) {
+                            mutation.addedNodes.forEach(function (node) {
+                                if (node.nodeType !== 1) return;
+                                var $wraps = jQuery(node)
+                                        .find('.lp-embedded-listing')
+                                        .addBack('.lp-embedded-listing');
+                                $wraps.each(function () {
+                                    initEmbeddedListing(jQuery(this));
+                                });
+                            });
+                        });
+                    });
+
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                });
+
+                $(document).ajaxComplete(function () {
+                    initAll();
+                });
+
+                // ============================================================
+                // 条件字段：set_fields 保存成功后检查条件字段，创建/取消条件 Analysis
+                // CONDITIONAL_FIELDS 从模板外的 LP_CONDITIONAL_FIELDS 变量读取（动态生成）
+                // ============================================================
+                (function () {
+                    // 读取模板动态生成的条件配置（script 标签外已由 tal 生成）
+                    var CONDITIONAL_FIELDS = (typeof LP_CONDITIONAL_FIELDS !== "undefined")
+                        ? LP_CONDITIONAL_FIELDS
+                        : [];
+
+                    var $panel = $("#labprocessruns-panel");
+
+                    function getArBaseUrl() {
+                        var url = window.location.href.split("?")[0].split("#")[0];
+                        url = url.replace(/\/@@[^\/]*$/, "");
+                        return url;
+                    }
+
+                    function getTaskrunUid($el) {
+                        var uid = $el.closest("[data-taskrun-uid]").data("taskrun-uid") || "";
+                        if (uid) return uid;
+                        uid = $el.closest("td").closest("tr").prevAll("tr").find(".lp-complete-form").first().data("task-uid") || "";
+                        return uid;
+                    }
+
+                    // 从 listing 行里读取条件字段的当前值
+                    function getConditionalFieldValue($wrap, keyword) {
+                        var val = "";
+                        $wrap.find("select[id*='" + keyword + "'], select[name*='" + keyword + "']").each(function () {
+                            val = $(this).val() || "";
+                        });
+                        if (!val) {
+                            $wrap.find("input[id*='" + keyword + "'], input[name*='" + keyword + "']").each(function () {
+                                val = $(this).val() || "";
+                            });
+                        }
+                        return val;
+                    }
+
+                    function runConditionalCheck($wrap, config) {
+                        var value = getConditionalFieldValue($wrap, config.keyword);
+                        if (!value) return;
+
+                        var taskrunUid = getTaskrunUid($wrap.find("select, input").first());
+                        if (!taskrunUid) {
+                            console.warn("[conditional] taskrun_uid not found");
+                            return;
+                        }
+
+                        var postUrl = getArBaseUrl() + "/@@check-conditional-analysis";
+                        var authenticator = $("input[name='_authenticator']").first().val() || "";
+                        fetch(postUrl, {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            credentials: "include",
+                            body: [
+                                "taskrun_uid=" + encodeURIComponent(taskrunUid),
+                                "field_keyword=" + encodeURIComponent(config.keyword),
+                                "field_value=" + encodeURIComponent(value),
+                                "trigger_service=" + encodeURIComponent(config.trigger_service),
+                                "_authenticator=" + encodeURIComponent(authenticator)
+                            ].join("&")
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (resp) {
+                            if (resp && (resp.action === "created" || resp.action === "cancelled")) {
+                                // 创建或取消 Analysis，刷新显示最新状态
+                                setTimeout(function () { location.reload(); }, 200);
+                            }
+                            // nothing_to_cancel / already_exists / no_config: 不刷新
+                        })
+                        .catch(function (e) {
+                            console.error("[conditional] failed", e);
+                        });
+                    }
+
+                    // 拦截 fetch：监听 set_fields 请求完成后执行条件检查
+                    (function () {
+                        var _originalFetch = window.fetch;
+                        window.fetch = function (input, init) {
+                            var url = (typeof input === "string") ? input : (input && input.url) || "";
+                            var promise = _originalFetch.apply(this, arguments);
+
+                            // 只拦截 set_fields 请求
+                            if (url.indexOf("set_fields") !== -1) {
+                                promise.then(function (response) {
+                                    if (!response.ok) return;
+                                    // set_fields 成功，找到对应的 listing wrap
+                                    var $wraps = $panel.find(".lp-embedded-listing");
+                                    $wraps.each(function () {
+                                        var $wrap = $(this);
+                                        CONDITIONAL_FIELDS.forEach(function (config) {
+                                            var val = getConditionalFieldValue($wrap, config.keyword);
+                                            if (val) runConditionalCheck($wrap, config);
+                                        });
+                                    });
+                                }).catch(function () {});
+                            }
+                            return promise;
+                        };
+                    })();
+                })();
+
+                // ============================================================
+                // sc_library_prep 分组表单保存逻辑
+                // ============================================================
+                (function () {
+                    var $panel = $("#labprocessruns-panel");
+
+                    function getArUrl($form) {
+                        return $form.attr("data-ar-url") ||
+                                window.location.href.split("?")[0].split("#")[0].replace(/\/@@[^\/]*$/, "");
+                    }
+
+                    function getCsrfToken() {
+                        // 从 cookie 或 meta 取
+                        var m = document.cookie.match(/csrf_token=([^;]+)/);
+                        return m ? m[1] : "";
+                    }
+
+                    $panel.on("click", ".lp-lib-save-btn", function () {
+                        var $btn = $(this);
+                        var $form = $btn.closest(".lp-library-prep-form");
+                        var analysisUid = $form.attr("data-analysis-uid") || $btn.attr("data-analysis-uid");
+                        var arUrl = getArUrl($form);
+
+                        if (!analysisUid || !arUrl) {
+                            console.warn("[lib-prep] missing analysisUid or arUrl");
+                            return;
+                        }
+
+                        // 收集所有字段值
+                        var fields = {};
+                        $form.find(".lp-lib-input").each(function () {
+                            var kw = $(this).attr("data-keyword");
+                            if (kw) fields[kw] = $(this).val() || "";
+                        });
+                        $btn.addClass("saving").text("保存中...");
+                        var $msg = $form.find(".lp-lib-saved-msg");
+
+                        // 找到 listing 的 api_url（用于 set_fields）
+                        var $wrap = $form.closest(".lp-embedded-listing");
+                        var apiUrl = $wrap.find(".listing-container").first().attr("data-api_url") || "";
+
+                        var saveQueue = {};
+                        saveQueue[analysisUid] = fields;
+
+                        var savePromise;
+                        if (apiUrl) {
+                            // 用 listing 的 set_fields 接口
+                            savePromise = fetch(apiUrl + "/set_fields" + location.search, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRF-TOKEN": getCsrfToken()
+                                },
+                                credentials: "include",
+                                body: JSON.stringify({save_queue: saveQueue})
+                            }).then(function (r) {
+                                return r.json();
+                            });
+                        } else {
+                            // fallback: 直接调 AR 的 set_fields
+                            var authenticator = $("input[name='_authenticator']").first().val() || "";
+                            var body = "save_queue=" + encodeURIComponent(JSON.stringify(saveQueue))
+                                    + "&_authenticator=" + encodeURIComponent(authenticator);
+                            savePromise = fetch(arUrl + "/@@labprocess_task_analyses/set_fields", {
+                                method: "POST",
+                                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                                credentials: "include",
+                                body: body
+                            }).then(function (r) {
+                                return r.json();
+                            });
+                        }
+
+                        savePromise.then(function (data) {
+                            $btn.removeClass("saving").text("保存");
+                            if (!$msg.length) {
+                                $btn.after('<span class="lp-lib-saved-msg">已保存 ✓</span>');
+                            }
+                            $form.find(".lp-lib-saved-msg").text("已保存 ✓").show()
+                                    .delay(2000).fadeOut();
+                        }).catch(function (e) {
+                            console.error("[lib-prep] save failed", e);
+                            $btn.removeClass("saving").text("保存");
+                            alert("保存失败，请重试");
+                        });
+                    });
+                })();
+
+            })(jQuery);
+        </script>
+
+    </div>
+</div>

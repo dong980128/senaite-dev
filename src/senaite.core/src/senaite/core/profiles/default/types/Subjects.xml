@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="Subjects" meta_type="Dexterity FTI"
+        i18n:domain="senaite.core"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title" i18n:translate="">病人</property>
+  <property name="description" i18n:translate="">Subjects section</property>
+  <property name="klass">plone.dexterity.content.Container</property>
+  <property name="schema">plone.supermodel.model.Schema</property>
+  <property name="global_allow">True</property>
+
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="subjects"/>
+  </property>
+
+  <property name="default_view">subjects</property>
+  <property name="immediate_view">view</property>
+
+  <!-- 图标先沿用；后续更换 -->
+  <property name="icon_expr">senaite_theme/icon/patient</property>
+
+</object>

@@ -1,0 +1,24 @@
+<div id="senaite-document-actions"
+     i18n:domain="senaite.core">
+
+  <tal:docactions tal:condition="view/actions">
+    <ul class="nav nav-pills float-right"
+        tal:define="normalizeString nocall: context/@@plone/normalizeString">
+      <li tal:repeat="daction view/actions"
+          tal:attributes="id python:'document-action-' + normalizeString(daction['id'])">
+        <a href=""
+            class="nav-link"
+            tal:attributes="href daction/url;
+                            target daction/link_target|nothing;
+                            title daction/description">
+          <img tal:condition="daction/icon"
+                tal:attributes="src python:daction.get('icon');
+                                alt python:daction.get('title');
+                                title python:daction.get('title')"/>
+        <span tal:condition="not:daction/icon"
+              tal:content="python:daction.get('id')"/>
+        </a>
+      </li>
+    </ul>
+  </tal:docactions>
+</div>

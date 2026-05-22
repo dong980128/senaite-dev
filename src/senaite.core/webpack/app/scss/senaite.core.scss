@@ -1,0 +1,148 @@
+@import "base.scss";
+@import "sidebar.scss";
+@import "setupview.scss";
+@import "toolbar.scss";
+@import "forms.scss";
+@import "plone.scss";
+@import "loader.scss";
+@import "listings.scss";
+
+html, body  { height: 100%; }
+
+/* Headers */
+h1, .h1, h2, .h2, h3, .h3 { font-weight: 300; }
+h1, .h1 { font-size: 2rem; }
+h2, .h2 { font-size: 1.85rem; }
+
+
+/* Text Colors */
+.text-state-active { color: $state-active-color; }
+.text-state-inactive { color: $state-inactive-color; }
+.text-state-sample_due { color: $state-sample_due-color; }
+.text-state-sample_received { color: $state-sample_received-color; }
+.text-state-to_be_verified { color: $state-to_be_verified-color; }
+.text-state-verified { color: $state-verified-color; }
+.text-state-published { color: $state-published-color; }
+.text-state-invalid { color: $state-invalid-color; }
+.text-state-rejected { color: $state-rejected-color; }
+.text-state-unassigned { color: $state-unassigned-color; }
+.text-state-retracted { color: $state-retracted-color; }
+.text-state-cancelled { color: $state-cancelled-color; }
+
+/* Background Colors */
+.bg-state-active { background-color: $state-active-color !important; }
+.bg-state-inactive { background-color: $state-inactive-color !important; }
+.bg-state-sample_due { background-color: $state-sample_due-color !important; }
+.bg-state-sample_received { background-color: $state-sample_received-color !important; }
+.bg-state-to_be_verified { background-color: $state-to_be_verified-color !important; }
+.bg-state-verified { background-color: $state-verified-color !important; }
+.bg-state-published { background-color: $state-published-color !important; }
+.bg-state-invalid { background-color: $state-invalid-color !important; }
+.bg-state-rejected { background-color: $state-rejected-color !important; }
+.bg-state-unassigned { background-color: $state-unassigned-color !important; }
+.bg-state-retracted { background-color: $state-retracted-color !important; }
+.bg-state-cancelled { background-color: $state-cancelled-color !important; }
+
+/* Cursors */
+.cursor-pointer { cursor: pointer; }
+.cursor-crosshair { cursor: crosshair; }
+.cursor-help { cursor: help; }
+.cursor-progress { cursor: progress; }
+.cursor-text { cursor: text; }
+
+/* Remove dotted outline */
+a { outline: 0; }
+
+/* SVG icon styles */
+i.hazardous-icon svg { fill: $danger; }
+
+
+/* inline delete button for WS attachments */
+img.deleteAttachmentButton {
+    cursor: pointer;
+    width: 16px;
+}
+
+/* Main content */
+div.container-fluid {
+  padding-left:30px;
+}
+
+/* Some spacing for the view title */
+#viewlet-listing-table-title {
+  margin-bottom:10px;
+  h1 {
+    margin:0 10px 0;
+  }
+}
+
+/* Remove bootstrap's default transition for buttons */
+.btn, .btn:hover {
+  /*text-decoration: none;
+  transition: none;*/
+}
+
+/* Notification Panel
+   Currently only shown when changing the instrument in WSs */
+#panel-notification {
+    top: 50%;
+    left: 50%;
+    position: fixed;
+    z-index: 1000;
+}
+
+#panel-notification {
+    .error-notification-item {
+        @extend .border;
+        @extend .border-warning;
+        @extend .card;
+        @extend .py-3;
+        @extend .px-4;
+    }
+    .succeed-notification-item {
+        @extend .border;
+        @extend .border-success;
+        @extend .card;
+        @extend .py-3;
+        @extend .px-4;
+    }
+}
+
+/* Priority icons in listings */
+.priority-ico {
+    @extend .fa;
+    span {
+        @extend .d-none;
+    }
+    &.priority-1 {
+        @extend .fa-arrow-up;
+        @extend .text-danger;
+    }
+    &.priority-2 {
+        @extend .fa-arrow-up;
+        @extend .text-warning;
+    }
+    &.priority-3 {
+        @extend .fa-arrow-up;
+        @extend .text-secondary;
+    }
+    &.priority-4 {
+        @extend .fa-arrow-down;
+        @extend .text-info;
+    }
+    &.priority-5 {
+        @extend .fa-arrow-down;
+        @extend .text-success;
+    }
+}
+
+/* Footer right icons */
+#senaite-footer .nav-pills li a.nav-link {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+}
+
+/** Footer colophon Powered by.. **/
+#senaite-colophon {
+    font-size: 0.9rem;
+}

@@ -1,0 +1,54 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="senaite.core">
+
+    <adapter
+      factory="bika.lims.browser.client.ClientContactVocabularyFactory"
+      provides="bika.lims.interfaces.IDisplayListVocabulary"
+      for="bika.lims.interfaces.IClient"
+      name="getContacts"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IClient"
+      name="batches"
+      class="bika.lims.browser.client.ClientBatchesView"
+      permission="zope2.View"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IClient"
+      name="base_view"
+      class="bika.lims.browser.client.ClientAnalysisRequestsView"
+      permission="zope2.View"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IClient"
+      name="analysisspecs"
+      class="bika.lims.browser.client.ClientAnalysisSpecsView"
+      permission="zope2.View"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IClient"
+      name="attachments"
+      class="bika.lims.browser.client.ClientAttachmentsView"
+      permission="zope2.View"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IClient"
+      name="contacts"
+      class="bika.lims.browser.client.ClientContactsView"
+      permission="zope2.View"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+</configure>

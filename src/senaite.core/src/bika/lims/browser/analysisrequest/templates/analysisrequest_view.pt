@@ -1,0 +1,50 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="here/main_template/macros/master"
+         i18n:domain="senaite.core">
+<head>
+    <title></title>
+</head>
+
+<body>
+
+<metal:content-title fill-slot="content-title">
+    <div class="row">
+        <div class="col-sm-12">
+            <!-- Viewlet manager: sample title -->
+            <div tal:replace="structure provider:senaite.sampletitle"></div>
+            <!-- Viewlet manager: sample description -->
+            <div tal:replace="structure provider:senaite.sampledescription"></div>
+        </div>
+    </div>
+</metal:content-title>
+
+<metal:content-description fill-slot="content-description">
+</metal:content-description>
+
+<metal:content-core fill-slot="content-core">
+
+    <!-- Viewlet manager: sample header -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div tal:replace="structure provider:senaite.sampleheader"></div>
+        </div>
+    </div>
+
+    <!-- Viewlet manager: sample sections -->
+    <div class="row" id="sample-sections" style="margin-top: 24px;">
+        <div class="col-sm-12">
+            <div tal:replace="structure provider:senaite.samplesections"></div>
+        </div>
+    </div>
+
+    <!-- Viewlet manager: above sample sections -->
+    <div class="row" id="above-sample-sections">
+        <div class="col-sm-12">
+            <div tal:replace="structure provider:senaite.abovesamplesections"></div>
+        </div>
+    </div>
+
+</metal:content-core>
+</body>
+</html>

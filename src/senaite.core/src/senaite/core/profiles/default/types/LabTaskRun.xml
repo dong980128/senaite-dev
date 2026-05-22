@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<object name="LabTaskRun" meta_type="Dexterity FTI" i18n:domain="senaite.core"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <property name="title">Lab Task Run</property>
+  <property name="description">Runtime task under a ProcessRun</property>
+  <property name="schema">senaite.core.labprocess.content.labtaskrun.ILabTaskRunSchema</property>
+  <property name="klass">senaite.core.labprocess.content.labtaskrun.LabTaskRun</property>
+
+  <property name="factory">LabTaskRun</property>
+  <property name="add_view_expr">string:${folder_url}/++add++LabTaskRun</property>
+
+  <property name="global_allow">False</property>
+
+  <property name="behaviors">
+    <element value="plone.basic"/>
+    <element value="plone.namefromtitle"/>
+  </property>
+
+</object>

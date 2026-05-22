@@ -1,0 +1,195 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="here/main_template/macros/master"
+         i18n:domain="senaite.core">
+<head>
+    <metal:block fill-slot="senaite_legacy_js"
+             tal:define="portal context/@@plone_portal_state/portal;">
+        <script type="text/javascript"
+                src="email.js"
+                 tal:attributes="src string:${portal/absolute_url}/++resource++senaite.core.browser.publish/js/email.js"></script>
+    </metal:block>
+
+    <metal:block fill-slot="senaite_legacy_css"
+             tal:define="portal context/@@plone_portal_state/portal;">
+        <link rel="stylesheet" type="text/css" media="all" href="#"
+                 tal:attributes="href string:${portal/absolute_url}/++resource++senaite.core.browser.publish/css/email.css"/>
+    </metal:block>
+</head>
+<body>
+
+<metal:title fill-slot="content-title">
+    <h1 i18n:translate="">
+        Send Analysis Reports via Email
+    </h1>
+</metal:title>
+<metal:description fill-slot="content-description">
+    <p i18n:translate="">
+        &larr; Back to the
+        <a tal:attributes="href view/exit_url"
+                 i18n:name="back_link"
+                 i18n:translate="">overview</a>
+    </p>
+</metal:description>
+
+<div id="emailview"
+         metal:fill-slot="content-core"
+         tal:define="portal context/@@plone_portal_state/portal;">
+
+    <form id="send_email_form"
+          name="send_email_form"
+          method="POST">
+
+        <!-- Email wrapper -->
+        <div class="email_wrapper">
+            <div class="form-group">
+                <label i18n:translate="" for="email_sender_address">From</label>
+                <span class="recipient valid"
+                         tal:define="email_sender_address view/email_sender_address;
+                                email_sender_name view/email_sender_name">
+              <span tal:attributes="title email_sender_address"
+                       tal:content="email_sender_name"/>
+            </span>
+            </div>
+            <div class="form-group">
+                <label i18n:translate="" for="recipients">收件人（可搜索或直接输入邮箱，回车/点选添加）</label>
+
+                <div class="recipient-picker" style="position:relative; max-width:640px;">
+                    <input id="recipient-input" type="text" class="form-control"
+                           placeholder="输入姓名或邮箱，回车添加；可输入多个"
+                           autocomplete="off"/>
+                    <div id="recipient-suggestions"
+                         class="dropdown-menu"
+                         style="display:none; position:absolute; top:38px; left:0; right:0; max-height:260px; overflow:auto;
+                background:#fff; border:1px solid #ddd; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.08); z-index:9999;">
+                    </div>
+                </div>
+
+                <!-- 已选 chips -->
+                <div id="recipient-chips" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+
+                <!-- 隐藏域容器：每个选项都会追加一个 hidden input name="recipients:list" -->
+                <div id="recipient-hidden"></div>
+
+                <!-- 如果喜欢支持“粘贴多邮箱”，可放开下面这块，后端已兼容 -->
+                <!--
+                <textarea name="recipients_text" class="form-control" rows="2"
+                          placeholder="可粘贴多邮箱，用逗号/分号/空格分隔"></textarea>
+                -->
+            </div>
+
+            <div class="form-group">
+                <label i18n:translate="" for="subject">Subject</label>
+                <input type="text" name="subject" value="" class="form-control"
+                         tal:attributes="value view/email_subject" />
+            </div>
+
+            <div class="form-group">
+                <label i18n:translate="" for="body">Text</label>
+                <textarea name="body" class="richTextWidget form-control" rows="12"
+                         tal:content="structure view/email_body">
+            </textarea>
+                <p i18n:translate="" class="help-block discreet">
+                    The variable <code i18n:name="recipients">$recipients</code> will
+                    be automatically replaced with the names and emails of the final
+                    selected recipients.
+                </p>
+            </div>
+
+            <div class="form-group"
+                     tal:define="attachments python:map(lambda r:r.get('attachments'), view.reports_data)">
+                <label i18n:translate="" for="attachments">Attachments</label>
+                <button id="add-attachments"
+                         tal:condition="python:any(attachments)"
+                        class="btn btn-xs btn-secondary">+
+                </button>
+                <div class="total_size discreet" i18n:translate="">
+              <span id="attachment-files"
+                       i18n:name="amount"
+                       tal:content="python:len(view.reports_data)"/>
+                    attachments with a total size of
+                    <span id="email-size" i18n:name="total_size" tal:content="python:'%.2f Kb' % view.total_size"/>
+                </div>
+
+                <div id="report-attachments-container"
+                     class="attachments well row">
+                    <tal:reports repeat="report view/reports_data">
+                        <input type="hidden" name="uids:list" tal:attributes="value report/uid"/>
+                        <div class="attachment d-inline-block pr-4">
+                            <a href="#"
+                               class="report-link"
+                               target="_blank"
+                                     tal:attributes="href string:${report/obj/absolute_url}/Pdf">
+                                <img tal:attributes="alt report/filename;
+                                        title string:${report/filename}(${report/filesize})"
+                                        src="++resource++senaite.core.browser.publish/img/pdf.png" width="32"/>
+                                <span tal:content="report/filename"/>
+                            </a>
+                        </div>
+                    </tal:reports>
+                </div>
+
+                <div id="additional-attachments-container"
+                     class="attachments row"
+                         tal:condition="python:any(attachments)">
+                    <div>
+                        <label i18n:translate="" for="select_all_attachments">Select all:</label>
+                        <input type="checkbox" name="select_all_attachments" id="select-all-attachments"/>
+                    </div>
+                    <!-- Additional Attachments -->
+                    <tal:reports repeat="report view/reports_data">
+                        <tal:attachments repeat="attachment report/attachments">
+                            <div class="attachment d-inline-block pr-4">
+                                <input type="checkbox"
+                                       name="attachment_uids:list" tal:attributes="value attachment/uid"/>
+                                <a href="#"
+                                   class="attachment-link"
+                                   target="_blank"
+                                         tal:attributes="href string:${attachment/obj/absolute_url}/AttachmentFile">
+                                    <div class="attachment-file">
+                                        <img tal:attributes="alt attachment/filename;
+                                                title string:${attachment/filename} ${attachment/mimetype}(${attachment/filesize} kB)"
+                                                src="++resource++senaite.core.browser.publish/img/attachment.png"
+                                                width="32"/>
+                                    </div>
+                                    <span class="filename" tal:content="attachment/filename"/>
+
+                                    <div class="attachment-info small">
+                                        <span tal:content="attachment/attachment_keys"/>
+                                        <span i18n:translate="">in</span>
+                                        <span tal:content="attachment/sample/getId"/>
+                                        <div class="fileinfo">
+                                            <span class="filetype" tal:content="attachment/mimetype"/>
+                                            <span class="filesize" tal:content="string:${attachment/filesize}kB"/>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </tal:attachments>
+                    </tal:reports>
+                </div>
+
+            </div>
+
+        </div>
+        <!-- /Email wrapper -->
+
+        <!-- Email Form Controls -->
+        <input class="btn btn-success btn-sm"
+               type="submit"
+               name="send"
+                 i18n:attributes="value"
+                 tal:attributes="disabled python:not view.allow_send and 'disabled'"
+               value="Send"/>
+        <input class="btn btn-secondary btn-sm"
+               type="submit"
+               name="cancel"
+                 i18n:attributes="value"
+               value="Cancel"/>
+        <!-- /Email Form Controls -->
+
+    </form>
+</div>
+</body>
+</html>

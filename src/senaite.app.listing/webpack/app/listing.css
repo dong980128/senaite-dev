@@ -1,0 +1,882 @@
+/* Listing Styles */
+
+/* Colors taken from https://mdbootstrap.com/css/colors/ */
+.ajax-contents-table tbody tr {
+    border-left: 2px solid #ddd;
+}
+
+.ajax-contents-table tbody tr:last-child {
+    border-bottom: 1px solid #ddd;
+}
+
+/* state sample_due */
+.ajax-contents-table tr.state-sample_due {
+    border-left: 2px solid #ffff8d !important;
+}
+
+.ajax-contents-table td.result.state-sample_due {
+    border-left: 2px solid #ffff8d !important;
+}
+
+.ajax-contents-table tr.state-sample_due:hover {
+    background-color: rgba(255, 235, 59, 0.1);
+}
+
+/* state sample_received */
+.ajax-contents-table tr.state-sample_received {
+    border-left: 2px solid #a1887f !important;
+}
+
+.ajax-contents-table td.result.state-sample_received {
+    border-left: 2px solid #a1887f !important;
+}
+
+.ajax-contents-table tr.state-sample_received:hover {
+    background-color: rgba(121, 85, 72, 0.1);
+}
+
+/* state retracted */
+.ajax-contents-table tr.state-retracted {
+    border-left: 2px solid #ff6f00 !important;
+}
+
+.ajax-contents-table tr.state-retracted > td:not([rowspan]) {
+    background-color: #eceff1 !important;
+    color: #78909c;
+    font-style: italic;
+}
+
+.ajax-contents-table td.result.state-retracted {
+    border-left: 2px solid #ff6f00 !important;
+}
+
+.ajax-contents-table tr.state-retracted:hover {
+    background-color: rgba(255, 152, 0, 0.1);
+}
+
+/* state to_be_verified */
+.ajax-contents-table tr.state-to_be_verified {
+    border-left: 2px solid #18ffff !important;
+}
+
+.ajax-contents-table td.result.state-to_be_verified {
+    border-left: 2px solid #18ffff !important;
+}
+
+.ajax-contents-table tr.state-to_be_verified:hover {
+    background-color: rgba(0, 188, 212, 0.1);
+}
+
+/* state verified */
+.ajax-contents-table tr.state-verified {
+    border-left: 2px solid #0091ea !important;
+}
+
+.ajax-contents-table td.result.state-verified {
+    border-left: 2px solid #0091ea !important;
+}
+
+.ajax-contents-table tr.state-verified:hover {
+    background-color: rgba(3, 169, 244, 0.2);
+}
+
+/* state published */
+.ajax-contents-table tr.state-published {
+    border-left: 2px solid #00c853 !important;
+}
+
+.ajax-contents-table td.result.state-published {
+    border-left: 2px solid #00c853 !important;
+}
+
+.ajax-contents-table tr.state-published:hover {
+    background-color: rgba(76, 175, 80, 0.2);
+}
+
+/* state invalid */
+.ajax-contents-table tr.state-invalid {
+    border-left: 2px solid #e65100 !important;
+}
+
+.ajax-contents-table td.result.state-invalid {
+    border-left: 2px solid #e65100 !important;
+}
+
+.ajax-contents-table tr.state-invalid:hover {
+    background-color: rgba(244, 67, 54, 0.2);
+}
+
+/* state rejected */
+.ajax-contents-table tr.state-rejected {
+    border-left: 2px solid #abc !important;
+}
+
+.ajax-contents-table td.result.state-rejected {
+    border-left: 2px solid #abc !important;
+}
+
+.ajax-contents-table tr.state-rejected:hover {
+    background-color: #abc;
+}
+
+/* state assigned */
+.ajax-contents-table tr.state-assigned {
+    border-left: 2px solid #ddd;
+}
+
+.ajax-contents-table td.result.state-assigned {
+    border-left: 2px solid transparent;
+}
+
+/* state unassigned */
+.ajax-contents-table tr.state-unassigned {
+    border-left: 2px solid #ddd;
+}
+
+.ajax-contents-table td.result.state-unassigned {
+    border-left: 2px solid transparent;
+}
+
+/* state cancelled */
+.ajax-contents-table tr.state-cancelled {
+    border-left: 2px solid #000000 !important;
+}
+
+.ajax-contents-table tr.state-cancelled:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* worksheet states */
+.ajax-contents-table tr.state-open {
+    border-left: 2px solid #ddd !important;
+}
+
+.ajax-contents-table tr.state-empty-worksheet {
+    border-left: 2px solid #ddd !important;
+}
+
+/* transposed worksheet layout*/
+.ajax-contents-table td.transposed.result.empty {
+    cursor: not-allowed;
+}
+
+.ajax-contents-table td.transposed.result:hover {
+    background-color: #e3e3e3 !important;
+}
+
+.ajax-contents-table td.transposed.result.empty:hover {
+    background-color: #e3e3e3;
+}
+
+/* active/inactive states*/
+.ajax-contents-table tr.state-active {
+    border-left: 2px solid transparent;
+}
+
+.ajax-contents-table tr.state-inactive {
+    border-left: 2px solid #616161;
+}
+
+.ajax-contents-table th.sortable {
+    cursor: pointer;
+}
+
+.ajax-contents-table th.sortable:hover {
+    background-color: #ccc;
+}
+
+.ajax-contents-table th:not(.sortable) {
+    cursor: not-allowed;
+}
+
+.ajax-contents-table th.active.ascending span:after {
+    content: "▲";
+    margin-left: 0.5em;
+}
+
+.ajax-contents-table th.active.descending span:after {
+    content: "▼";
+    margin-left: 0.5em;
+}
+
+/* category */
+.ajax-contents-table tr.categoryrow {
+    background-color: rgba(96, 125, 139, 0.1) !important;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 115%;
+    color: #3E4551;
+}
+
+/* table load mask */
+#table-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    height: 100%;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    opacity: 0.6;
+}
+
+/* progress bar */
+.ajax-contents-table tr td div.progress {
+    width: 55px;
+    margin-bottom: 0;
+    height: 17px;
+}
+
+.ajax-contents-table tr td div.progress div.progress-bar {
+    color: #f5f5f5;
+    background-color: #33b5e5;
+    line-height: 17px;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.ajax-contents-table tr.state-invalid td div.progress div.progress-bar,
+.ajax-contents-table tr.state-cancelled td div.progress div.progress-bar {
+    background-color: #c9c9c9;
+}
+
+/* collapsible rows */
+.ajax-contents-table tr.togglerow {
+    cursor: pointer;
+}
+
+.ajax-contents-table tr.childrow td:first-child {
+    padding-left: 1em;
+}
+
+.ajax-contents-table tr.childrow td:first-child:before {
+    content: "➥ ";
+}
+
+/* before item */
+.ajax-contents-table tr span.before-item {
+    display: table-cell;
+    line-height: 0;
+    vertical-align: middle;
+    padding-right: 5px;
+}
+
+/* after item */
+.ajax-contents-table tr span.after-item {
+    display: table-cell;
+    line-height: 0;
+    vertical-align: middle;
+    padding-left: 5px;
+}
+
+/* Render table form-controls smaller */
+.ajax-contents-table tr td div.form-group {
+    display: inline-table;
+}
+
+/* Top toolbar */
+.ajax-contents-table .top-toolbar {
+    padding-bottom: .5em;
+}
+
+/* Expandable Rows */
+.ajax-contents-table tr.contentrow.child td {
+    border-top: none;
+}
+
+.ajax-contents-table tr.contentrow.collapsed td:first-child:before,
+.ajax-contents-table tr.contentrow.expanded td:first-child:before,
+.ajax-contents-table tr.contentrow.child td:first-child:before {
+    line-height: normal;
+    padding-right: 0.5rem;
+    vertical-align: bottom;
+    color: #555;
+    cursor: pointer;
+    float: left;
+    width: 20px; /* aligns the toggle symbols */
+}
+
+/* node levels (0.75rem is the default td padding) */
+.ajax-contents-table th.select-column {
+    width: 10px;
+}
+
+.ajax-contents-table td.level-0 {
+    padding-left: 0.75rem;
+}
+
+.ajax-contents-table td.level-1 {
+    padding-left: 1.75rem;
+}
+
+.ajax-contents-table td.level-2 {
+    padding-left: 2.75rem;
+}
+
+.ajax-contents-table td.level-3 {
+    padding-left: 3.75rem;
+}
+
+.ajax-contents-table td.level-4 {
+    padding-left: 4.75rem;
+}
+
+.ajax-contents-table td.level-5 {
+    padding-left: 5.75rem;
+}
+
+.ajax-contents-table td.level-6 {
+    padding-left: 6.75rem;
+}
+
+.ajax-contents-table tr.contentrow.collapsed td:first-child::before {
+    content: "▶";
+}
+
+.ajax-contents-table tr.contentrow.expanded td:first-child::before {
+    content: "▼";
+}
+
+.ajax-contents-table tr.contentrow.child td:first-child::before {
+    content: "⋯";
+}
+
+.ajax-contents-table tr.contentrow.child.collapsed td:first-child::before {
+    content: "▶";
+}
+
+.ajax-contents-table tr.contentrow.child.expanded td:first-child::before {
+    content: "▼";
+}
+
+/* Remark Rows */
+.ajax-contents-table tr.remarksrow td {
+    padding: 0;
+    border: none;
+}
+
+.ajax-contents-table tr.remarksrow td div.remarks {
+    min-height: 20px;
+    padding: 5px;
+    margin: 5px;
+    background-color: #f5f5f5;
+    border: 1px solid #e3e3e3;
+    border-radius: 3px;
+}
+
+/* Multi choice */
+.ajax-contents-table tr td div.multichoice {
+    max-height: 120px;
+    width: 200px;
+    overflow: auto;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.ajax-contents-table tr td div.multichoice ul {
+    padding: 0;
+    margin: 0;
+}
+
+.ajax-contents-table tr td div.multichoice li {
+    padding: 6px;
+}
+
+.ajax-contents-table tr td div.multichoice li:hover {
+    background-color: #f9f9f9;
+}
+
+/* Result multi choice */
+.ajax-contents-table tr td.Result div.multichoice {
+    border: none;
+}
+
+.ajax-contents-table tr td.Result div.multichoice li {
+    padding: 4px 6px;
+}
+
+/* Multi select */
+.ajax-contents-table tr td div.multiselect ul {
+    padding: 0;
+    margin: 0;
+}
+
+.ajax-contents-table tr td div.multiselect li {
+    padding: 2px 6px;
+}
+
+/* Multi value
+Same styling as multi-select, cause we do want multi value elements to be fully
+aligned when they are rendered close to multiselect counterpart. Since values
+are always stored in same order, this styling allows multi values to "refer" to
+selected elements from multiselect
+*/
+.ajax-contents-table tr td div.multivalue ul {
+    padding: 0;
+    margin: 0;
+}
+
+.ajax-contents-table tr td div.multivalue li {
+    padding: 2px 6px;
+}
+
+/* Rowspan support */
+.ajax-contents-table tr td[rowspan] {
+    border: 1px solid #ddd;
+    background-color: white !important;
+}
+
+.ajax-contents-table tr td[rowspan]:hover {
+    background-color: white !important;
+}
+
+/* borderless table */
+.ajax-contents-table table.table-borderless td {
+    border: none !important;
+}
+
+.ajax-contents-table table.table-borderless tr {
+    border: none !important;
+}
+
+/* Worksheet's slots table */
+.ajax-contents-table table.slot-header-table {
+    margin-bottom: 0px;
+}
+
+/* Results Unit */
+.ajax-contents-table span.unit {
+    padding: 0 0.25em;
+    color: black;
+}
+
+
+/* Transposed Cell */
+.ajax-contents-table td.transposed span.before-item {
+    width: 60px
+}
+
+.ajax-contents-table td.transposed span.before-item > * {
+    display: block;
+    float: left;
+    padding-right: 5px;
+}
+
+.ajax-contents-table td.transposed span.before-item input[type=checkbox] {
+    margin: 0;
+}
+
+.ajax-contents-table td.transposed input {
+    margin-right: 10px;
+}
+
+.ajax-contents-table td.transposed .before_field {
+    font-size: 85%;
+    display: table-cell;
+}
+
+.ajax-contents-table td.transposed .after_field {
+    font-size: 85%;
+    display: table-cell;
+}
+
+.ajax-contents-table td.transposed span.readonly {
+    padding-right: 0.5em;
+}
+
+/* Regular Cell */
+.ajax-contents-table td a.remarks {
+    display: block;
+}
+
+/* Drag&Drop behavior */
+.ajax-contents-table tr.dragging {
+    opacity: 0;
+}
+
+.ajax-contents-table td.dnd {
+    cursor: move;
+}
+
+.ajax-contents-table table.contentstable thead th,
+table.contents-table thead th {
+    white-space: nowrap !important; /*表头不换行 */
+    word-break: keep-all; /* 中文/英文尽量不在中间断开 */
+    writing-mode: horizontal-tb; /* 强制水平*/
+    /*text-align: center;*/
+    vertical-align: middle;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.ajax-contents-table table.contentstable thead th > *,
+table.contents-table thead th > * {
+    display: inline-block;
+    max-width: 18rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.ajax-contents-table,
+.table-wrapper,
+.table-scroll {
+    overflow-x: auto;
+}
+
+/*.ajax-contents-table th.Service,*/
+.ajax-contents-table td.contentcell.Service {
+    min-width: 15rem;
+    max-width: 18rem;
+}
+
+.ajax-contents-table td.contentcell.Service .form-group {
+    width: 100%;
+}
+
+.ajax-contents-table th.Service {
+    white-space: nowrap;
+}
+
+.tiered-input.computed {
+    background: #f8fafc;
+    cursor: not-allowed;
+}
+
+.posneg-cell .posneg-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.posneg-widget .posneg-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.posneg-widget .posneg-note {
+    flex: 0 0 150px;
+}
+
+/* 整个控件竖排 */
+.posneg-widget {
+    display: block;
+}
+
+/* 每一行独占一行，内容横向排 */
+.posneg-widget .posneg-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+/* 文本留一个固定宽度，这样几列能对齐 */
+.posneg-widget .posneg-label {
+    display: inline-block;
+    width: 48px;
+}
+
+/* 备注框统一宽度 */
+.posneg-widget .posneg-note {
+    width: 160px;
+}
+
+/* 解决：隐藏字段造成字段出现的样式拥挤 */
+.tiered-hidden-column {
+    visibility: hidden;
+    min-width: 80px;
+}
+
+/* =============== 容器布局 =============== */
+
+/* 外层 host：占满单元格 */
+.tiered-multivalue-host {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: none;
+}
+
+/* 顶部下拉（检测 / 未检测） */
+.tmv-filter {
+    width: 140px;
+}
+
+/* 左右两块：左边表格，右边图片 */
+.tiered-multivalue {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+}
+
+/* 左边输入列 */
+.tiered-multivalue .tmv-left {
+    width: 150px;
+    flex: 0 0 150px;
+}
+
+/* 表格本身 */
+.tiered-multivalue .tmv-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.tiered-multivalue .tmv-label {
+    width: 80px;
+    font-weight: normal;
+    vertical-align: middle;
+    color: #2b3c4d;
+}
+
+.tiered-multivalue .tmv-cell {
+    position: relative;
+    vertical-align: top;
+    padding-bottom: 4px;
+}
+
+/* 左边的输入框容器 */
+.tiered-multivalue .tmv-input-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+/* 数值输入框 */
+.tiered-multivalue .tmv-input-wrap .tmv-input {
+    width: 72px;
+    box-sizing: border-box;
+    height: 26px;
+    line-height: 24px;
+    padding: 2px 4px;
+}
+
+/* 只读格子（H-score、总和或整行只读时使用） */
+.tiered-multivalue .tmv-readonly {
+    display: block;
+    width: 72px;
+    background: #f7f7f7;
+    border: 1px solid #e5e5e5;
+    padding: 2px 4px;
+    height: 26px;
+    line-height: 22px;
+    box-sizing: border-box;
+}
+
+.tiered-multivalue .tmv-upload-input {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+/* 上传条：上传图片 / 清空 */
+.tiered-multivalue .tmv-upload-bar {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 10px 0;
+}
+
+.tiered-multivalue .tmv-upload-btn,
+.tiered-multivalue .tmv-upload-clear {
+    padding: 2px 10px;
+    font-size: 12px;
+    line-height: 18px;
+    height: 24px;
+    border: 1px solid #cbdde8;
+    background: #fff;
+    cursor: pointer;
+}
+
+.tiered-multivalue .tmv-upload-btn:hover,
+.tiered-multivalue .tmv-upload-clear:hover {
+    filter: brightness(0.97);
+}
+
+.tiered-multivalue .tmv-preview-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
+    background: #f5f7f8;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+/* 多图网格 */
+.tiered-multivalue .tmv-preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 单图卡片 */
+.tiered-multivalue .tmv-preview-item {
+    border: 1px dashed #cbdde8;
+    background: #fff;
+    padding: 6px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    min-height: 110px;
+    max-width: 320px;
+    overflow: hidden;
+}
+
+/* 图本身 */
+.tiered-multivalue .tmv-preview-image {
+    display: block;
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+}
+
+/* 空状态 */
+.tiered-multivalue .tmv-preview-empty {
+    opacity: 0.6;
+    padding: 10px;
+}
+
+.tmv-preview-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .tiered-multivalue {
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+
+    .tiered-multivalue .tmv-preview-panel {
+        min-width: 100%;
+    }
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-table tr {
+    border-left: 0 !important;
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-table th.tmv-label,
+.tmv-ihc-host.tmv-ihc--view .tmv-table td.tmv-cell {
+    padding: 2px 0 !important;
+    line-height: 18px !important;
+    vertical-align: middle;
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-label,
+.tmv-ihc-host.tmv-ihc--view .tmv-readonly,
+.tmv-ihc-host.tmv-ihc--view .tmv-ro {
+    font-size: 14px !important;
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-readonly,
+.tmv-ihc-host.tmv-ihc--view .tmv-ro {
+    display: inline !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 18px !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.tmv-ihc-host.tmv-ihc--view .tmv-preview-panel {
+    padding: 6px;
+    border: 0;
+}
+
+
+.tmv-root {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+.tmv-root .tmv-filter {
+    flex: 0 0 180px;
+}
+
+.tmv-root .tmv-preview-host {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.tmv-preview-panel {
+    width: 100%;
+    min-width: 0;
+    background: #f5f7f8;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.tmv-preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.tmv-preview-item {
+    border: 1px dashed #cbdde8;
+    background: #fff;
+    padding: 6px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 260px;
+    min-width: 160px;
+    min-height: 110px;
+    max-width: 320px;
+    overflow: hidden;
+}
+
+.tmv-preview-image {
+    display: block;
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+}
+
+.tmv-preview-empty {
+    opacity: .6;
+    padding: 10px;
+}
+
+.tmv-preview-zoom {
+    max-width: 90vw;
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: none;
+    will-change: transform;
+}

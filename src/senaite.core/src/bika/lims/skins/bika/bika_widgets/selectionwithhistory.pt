@@ -1,0 +1,13 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal">
+
+<metal:selectionwithhistory define-macro="selectionwithhistory">
+  <select tal:attributes="name fieldName; id fieldName">
+    <option value="" i18n:translate="">No value</option>
+    <option tal:repeat="item options"
+            tal:attributes="value item; selected python: item == value"
+            tal:content="item"/>
+  </select>
+</metal:selectionwithhistory>
+
+</html>

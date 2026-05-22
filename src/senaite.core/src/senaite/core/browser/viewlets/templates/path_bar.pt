@@ -1,0 +1,35 @@
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb"
+             tal:define="breadcrumbs view/breadcrumbs;
+            is_rtl view/is_rtl"
+             tal:attributes="dir python:is_rtl and 'rtl' or 'ltr'"
+             i18n:domain="plone">
+
+        <li id="breadcrumbs-home" class="breadcrumb-item">
+            <a href="#" i18n:translate="Home" tal:attributes="href view/navigation_root_url">Home</a>
+        </li>
+
+        <tal:crumb tal:repeat="crumb breadcrumbs">
+            <tal:item tal:define="is_last repeat/crumb/end;
+                    url crumb/absolute_url;
+                    title crumb/Title">
+                <li tal:attributes="class python: is_last and 'active breadcrumb-item' or 'breadcrumb-item';
+                        id string:breadcrumbs-${repeat/crumb/number};">
+                    <a href="#"
+                             tal:omit-tag="not: url"
+                             tal:attributes="href url;
+                                    class python:is_last and 'text-secondary'"
+                             tal:content="title">
+                        crumb
+                    </a>
+                </li>
+            </tal:item>
+        </tal:crumb>
+
+        <tal:block tal:condition="view/referer_url">
+            <li class="breadcrumb-item">
+                <a tal:attributes="href view/referer_url">返回上一页</a>
+            </li>
+        </tal:block>
+    </ol>
+</nav>

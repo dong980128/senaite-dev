@@ -1,0 +1,84 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="senaite.core">
+
+  <!-- 页面标题 -->
+  <metal:content-title fill-slot="content-title">
+    <h1 class="documentFirstHeading">
+      管理检验项目
+    </h1>
+  </metal:content-title>
+
+  <!-- 主体内容 -->
+  <metal:content-core fill-slot="content-core">
+    <div id="content-core">
+
+      <!-- 顶部筛选条 -->
+      <div class="bika-listing-toolbar">
+        <form tal:attributes="action request/ACTUAL_URL"
+              method="get"
+              class="bika-listing-filter">
+
+          <label for="active-filter">状态：</label>
+          <select id="active-filter"
+                  name="active"
+                  onchange="this.form.submit()">
+            <option value="active"
+                    tal:attributes="selected python:view.active_filter()=='active'">
+              仅启用
+            </option>
+            <option value="inactive"
+                    tal:attributes="selected python:view.active_filter()=='inactive'">
+              仅停用
+            </option>
+            <option value="all"
+                    tal:attributes="selected python:view.active_filter()=='all'">
+              所有
+            </option>
+          </select>
+
+        </form>
+      </div>
+
+      <!-- 列表表格 -->
+      <div class="bika-listing-table-wrapper">
+        <table class="listing" cellspacing="0" cellpadding="0">
+          <thead>
+            <tr>
+              <th class="nosort">服务</th>
+              <th class="nosort">样本数量</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tal:rows repeat="svc view/services">
+              <tr>
+                <td>
+                  <a tal:attributes="href svc/getURL"
+                     tal:content="svc/Title">
+                    Service title
+                  </a>
+                </td>
+                <td>
+                  <!-- 样本数量做成链接，跳转到样本列表 -->
+                  <a tal:attributes="href string:${context/absolute_url}/@@service-sample-list?service_uid=${svc/UID}"
+                     tal:content="python:view.sample_count(svc)">
+                    0
+                  </a>
+                </td>
+              </tr>
+            </tal:rows>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 没有服务时的提示 -->
+      <tal:no-services condition="not: view/services">
+        <p>未找到任何检验项目。</p>
+      </tal:no-services>
+
+    </div>
+  </metal:content-core>
+
+</html>

@@ -1,0 +1,83 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <!-- Package includes -->
+  <include package=".rejection"/>
+
+  <!-- main site/samples view -->
+  <browser:page
+      for="senaite.core.interfaces.ISamples"
+      name="view"
+      class=".view.SamplesView"
+      permission="cmf.ListFolderContents"
+      layer="senaite.core.interfaces.ISenaiteCore"
+  />
+
+  <!-- Partition Magic View
+       NOTE:
+       We use the permission `zope2.View` to allow client shared roles to access
+       the view from the global samples listing, which is above the client context
+       where the roles are applied!
+  -->
+  <browser:page
+      for="*"
+      name="partition_magic"
+      class=".partition_magic.PartitionMagicView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+  <!-- Dispatch Samples View
+
+       NOTE:
+
+       We use the permission `zope2.View` to allow client shared roles to access
+       the view from the global samples listing, which is above the client context
+       where the roles are applied!
+  -->
+  <browser:page
+      for="*"
+      name="dispatch_samples"
+      class=".dispatch_samples.DispatchSamplesView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+  <!-- Multi Results View
+
+       NOTE:
+
+       We use the permission `zope2.View` to allow client shared roles to access
+       the view from the global samples listing, which is above the client context
+       where the roles are applied!
+  -->
+  <browser:page
+      for="*"
+      name="multi_results_classic"
+      class=".multi_results_classic.MultiResultsClassicView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+  <browser:page
+      for="*"
+      name="multi_results"
+      class=".multi_results_transposed.MultiResultsTransposedView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+  <!-- Manage Sample Fields -->
+  <browser:page
+      for="*"
+      name="manage-sample-fields"
+      class=".manage_sample_fields.ManageSampleFieldsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore" />
+
+    <browser:page
+      name="owner_history"
+      for="*"
+      class=".owner_history.OwnerHistoryFillsByUserView"
+      template="templates/owner_history.pt"
+      permission="senaite.core.permissions.ViewOwnerHistory"
+      />
+
+</configure>

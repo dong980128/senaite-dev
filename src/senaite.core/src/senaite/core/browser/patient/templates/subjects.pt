@@ -1,0 +1,275 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="context/main_template/macros/master">
+
+<metal:main fill-slot="main" tal:define="rows view/get_rows; total view/total_subjects; pager python:view.pager()">
+
+    <div class="subjects-wrap">
+        <div class="subjects-title">
+            <h1>受试者（病人）</h1>
+        </div>
+
+        <form class="subjects-toolbar" method="get">
+            <input type="hidden" name="b_start" value="0"/>
+
+            <label>每页</label>
+            <select name="pagesize">
+                <option value="25"  tal:attributes="selected python:str(view.pagesize())=='25'">25</option>
+                <option value="50"  tal:attributes="selected python:str(view.pagesize())=='50'">50</option>
+                <option value="100" tal:attributes="selected python:str(view.pagesize())=='100'">100</option>
+                <option value="200" tal:attributes="selected python:str(view.pagesize())=='200'">200</option>
+            </select>
+
+            <input type="text"
+                   name="SearchableText"
+                   placeholder="搜索 SubjectUID / 样本ID"
+                     tal:attributes="value request/SearchableText|nothing"/>
+
+            <button type="submit">搜索</button>
+
+            <span class="subjects-total" tal:content="string:共 ${total} 人">共 0 人</span>
+        </form>
+
+        <div class="subjects-table-shell">
+            <div class="subjects-table-scroll">
+                <table class="subjects-table">
+                    <colgroup>
+                        <col style="width:14%;"/>
+                        <col style="width:10%;"/>
+                        <col style="width:22%;"/>
+                        <col style="width:8%;"/>
+                        <col style="width:10%;"/>
+                        <col style="width:8%;"/>
+                        <col style="width:12%;"/>
+                        <col style="width:6%;"/>
+                        <col style="width:10%;"/>
+                        <col style="width:10%;"/>
+                    </colgroup>
+
+                    <thead>
+                    <tr>
+                        <th>受试者唯一编码</th>
+                        <th>系统样本ID</th>
+                        <th>癌种</th>
+                        <th>项目</th>
+                        <th>样本类型</th>
+                        <th>创建者</th>
+                        <th>中心名称</th>
+                        <th>国籍</th>
+                        <th>样本编号</th>
+                        <th>创建时间</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr tal:repeat="row rows">
+                        <!-- 长ID：-->
+                        <td class="td-breakall">
+                            <a tal:attributes="href python:view.subject_url(row['subject_uid'])"
+                                     tal:content="row/subject_uid">UID</a>
+                        </td>
+
+                        <td class="td-breakall">
+                            <a tal:attributes="href row/latest_sample_url"
+                                     tal:content="row/latest_sample_id">Sample</a>
+                        </td>
+
+                        <td>
+                            <div class="td-wrap"
+                                     tal:content="structure row/cancer_type">-
+                            </div>
+                        </td>
+
+                        <td class="td-wrap" tal:content="structure row/project">-</td>
+                        <td class="td-wrap" tal:content="structure row/sample_type">-</td>
+                        <td class="td-wrap" tal:content="structure row/creator">-</td>
+
+                        <td class="td-wrap"
+                                 tal:content="structure row/center_name">-
+                        </td>
+
+                        <td class="td-wrap" tal:content="row/ethnicity">-</td>
+
+                        <!-- 编号可能很长：也断行 -->
+                        <td class="td-breakall" tal:content="row/sample_code">-</td>
+
+                        <!-- 时间允许换行（日期/时间之间有空格，小屏会自然换行） -->
+                        <td class="td-wrap" tal:content="row/latest_created">-</td>
+                    </tr>
+
+                    <tr tal:condition="python:not rows">
+                        <td colspan="10" style="text-align:center; padding:16px; color:#64748b;">
+                            暂无数据
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="subjects-pager" tal:condition="pager">
+                    <a class="pager-btn"
+                             tal:attributes="href pager/prev_url"
+                             tal:condition="python:pager.get('prev_url')">
+                        上一页
+                    </a>
+
+                    <span class="pager-info"
+                             tal:content="python:u'第 %s / %s 页' % (pager.get('cur_page'), pager.get('last_page'))">
+                        第 1 / 1 页
+                      </span>
+
+                    <a class="pager-btn"
+                             tal:attributes="href pager/next_url"
+                             tal:condition="python:pager.get('next_url')">
+                        下一页
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style type="text/css">
+        .subjects-table-shell {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .subjects-wrap {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+            padding: 16px;
+        }
+
+        .subjects-table-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        table.subjects-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            color: #1f2937;
+
+            table-layout: fixed;
+        }
+
+        table.subjects-table thead th {
+            background: #f3f4f6;
+            border-bottom: 1px solid #d6dde6;
+            padding: 10px 10px;
+            font-weight: 700;
+            text-align: left;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        table.subjects-table tbody td {
+            border-bottom: 1px solid #eef2f6;
+            padding: 10px 10px;
+            vertical-align: top;
+            background: #fff;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        table.subjects-table tbody tr:hover td {
+            background: #f9fafb;
+        }
+
+        .td-wrap {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .td-breakall {
+            word-break: break-all;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+
+        table.subjects-table a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        table.subjects-table a:hover {
+            text-decoration: underline;
+        }
+
+        table.subjects-table a:visited {
+            color: #6979b3;
+        }
+
+        .subjects-total {
+            margin-left: 8px;
+            color: #333;
+        }
+
+        .subjects-pager {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .subjects-pager .pager-btn {
+            padding: 4px 10px;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            background: #fff;
+            color: #111;
+            text-decoration: none;
+        }
+
+        .subjects-pager .pager-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .subjects-pager .pager-info {
+            color: #555;
+        }
+
+        @media (max-width: 1024px) {
+            table.subjects-table {
+                font-size: 12px;
+            }
+
+            table.subjects-table thead th,
+            table.subjects-table tbody td {
+                padding: 8px 8px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            table.subjects-table {
+                font-size: 12px;
+            }
+
+            table.subjects-table thead th,
+            table.subjects-table tbody td {
+                padding: 6px 6px;
+            }
+        }
+    </style>
+    <script>
+        (function () {
+            var s = document.querySelector('select[name="pagesize"]');
+            if (!s) return;
+            s.addEventListener('change', function () {
+                var f = s.closest('form');
+                if (f) f.submit();
+            });
+        })();
+    </script>
+</metal:main>
+</html>

@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="senaite.core">
+
+  <adapter
+      factory="bika.lims.browser.analysis.JSONReadExtender"
+      provides="bika.lims.interfaces.IJSONReadExtender" />
+
+  <browser:page
+      for="*"
+      name="tmv-upload"
+      class="bika.lims.browser.analyses.tmv_upload.TMVUploadView"
+      permission="zope2.View"
+      allowed_attributes="__call__"/>
+
+  <browser:page
+     for="*"
+     name="tmv-image"
+     class="bika.lims.browser.analyses.tmv_image.TMVImageView"
+     permission="zope2.View"
+     allowed_attributes="__call__"/>
+
+</configure>

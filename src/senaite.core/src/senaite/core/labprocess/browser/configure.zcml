@@ -1,0 +1,128 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <browser:page
+      for="*"
+      name="labprocesses"
+      class=".labprocesses.LabProcessesListingView"
+      template ="templates/labprocesses.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="process"
+      class=".process.ProcessView"
+      template="templates/labprocess_view.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="labtasks"
+      class=".labtask.LabTasksView"
+      template="templates/labtasks.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="generate-tasks"
+      class=".generate_tasks.GenerateTasksView"
+      permission="cmf.ModifyPortalContent"
+      />
+
+  <browser:page
+      for="*"
+      name="pipeline-edit"
+      class=".pipeline_edit.PipelineEditView"
+      template="templates/pipeline_edit.pt"
+      permission="cmf.ModifyPortalContent"
+    />
+
+  <browser:viewlet
+      name="senaite.core.samplesection.labprocessruns"
+      for="bika.lims.interfaces.IAnalysisRequest"
+      manager="senaite.core.browser.viewlets.interfaces.ISampleSection"
+      class=".viewlets.labprocessruns.LabProcessRunsViewlet"
+      template="templates/labprocessruns_viewlet.pt"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+    />
+
+  <browser:page
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="create-labprocessrun"
+      class=".create_processrun.CreateLabProcessRunView"
+      permission="cmf.ModifyPortalContent"
+    />
+
+  <!-- 获取流程第一步请检信息定义（单个 AR，含预填值） -->
+  <browser:page
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="get-process-conditions"
+      class=".get_process_conditions.GetProcessConditionsView"
+      permission="zope2.View"
+    />
+
+  <!-- 批量获取多个 AR 的请检信息预填值 -->
+  <browser:page
+      for="*"
+      name="get-batch-process-conditions"
+      class=".get_process_conditions.GetBatchProcessConditionsView"
+      permission="zope2.View"
+    />
+
+  <!-- 请检信息 Modal 组件（可复用） -->
+  <browser:page
+      for="*"
+      name="conditions_modal"
+      template="templates/conditions_modal.pt"
+      permission="zope2.View"
+    />
+
+  <browser:page
+    for="*"
+    name="labprocess-add"
+    class=".labprocess_add.LabProcessAddView"
+    template="templates/labprocess_add.pt"
+    permission="cmf.AddPortalContent"
+   />
+
+  <browser:page
+    name="advance-taskrun"
+    for="*"
+    class=".advance_taskrun.AdvanceTaskRunView"
+    permission="zope2.View"
+    />
+
+  <browser:page
+    for ="bika.lims.interfaces.IAnalysisRequest"
+    name ="labprocess_task_analyses"
+    class=".taskanalyses.LabProcessTaskAnalysesView"
+    permission="zope2.View"
+  />
+
+  <browser:page
+    for="*"
+    name="cancel-processrun"
+    class=".cancel_processrun.CancelProcessRunView"
+    permission="cmf.ModifyPortalContent"
+  />
+
+  <browser:page
+    for="bika.lims.interfaces.IAnalysisRequest"
+    name="check-conditional-analysis"
+    class=".check_conditional_analysis.CheckConditionalAnalysisView"
+    permission="cmf.ModifyPortalContent"
+  />
+
+  <browser:page
+    name="upload-analysis-file"
+    for="bika.lims.interfaces.IAnalysisRequest"
+    class=".upload_analysis_file.UploadAnalysisFileView"
+    permission="zope2.View"
+  />
+
+</configure>

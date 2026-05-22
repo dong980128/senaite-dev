@@ -1,0 +1,281 @@
+<metal:page use-macro="context/main_template/macros/master"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+         i18n:domain="senaite.core">
+
+    <metal:main fill-slot="main">
+        <style>
+            /* ========== Project Center Samples 页面专用样式 ========== */
+            .project-center-samples {
+                margin-top: 6px;
+            }
+
+            /* 标题区 */
+            .project-center-samples .pcs-header {
+                display: flex;
+                align-items: baseline;
+                gap: .75rem;
+                margin: 6px 0 16px;
+            }
+
+            .project-center-samples .page-title {
+                font-size: 22px;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            .project-center-samples .count-badge {
+                display: inline-block;
+                font-size: .9rem;
+                line-height: 1;
+                padding: .25rem .6rem;
+                border-radius: 999px;
+                background: #f4f8ff;
+                border: 1px solid #dbe7ff;
+                color: #2058b4;
+            }
+
+            /* 表格骨架：卡片风格 + 粘性表头 */
+            .project-center-samples .pcs-table {
+                width: 100%;
+                border-collapse: separate; /* 允许行间距做卡片效果 */
+                border-spacing: 0 8px; /* 行间距 */
+            }
+
+            .project-center-samples .pcs-table thead th {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: #fff;
+                border-bottom: 1px solid #eaeaea;
+                padding: 10px 12px;
+                font-weight: 600;
+            }
+
+            .project-center-samples .pcs-table tbody tr {
+                background: #fff;
+                border: 1px solid #ececec;
+                border-radius: 10px;
+                box-shadow: 0 1px 0 rgba(0, 0, 0, .02);
+                transition: box-shadow .2s ease, transform .2s ease;
+            }
+
+            .project-center-samples .pcs-table tbody tr:hover {
+                box-shadow: 0 4px 16px rgba(0, 0, 0, .06);
+                transform: translateY(-1px);
+            }
+
+            .project-center-samples .pcs-table td {
+                padding: 10px 12px;
+                vertical-align: middle;
+            }
+
+            /* 让卡片圆角真正生效 */
+            .project-center-samples .pcs-table tbody tr td:first-child {
+                border-top-left-radius: 10px;
+                border-bottom-left-radius: 10px;
+            }
+
+            .project-center-samples .pcs-table tbody tr td:last-child {
+                border-top-right-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+
+            /* 列宽与对齐：让“样本数”更靠近项目列 */
+            .project-center-samples .pcs-table .col-center {
+                width: 42%;
+            }
+
+            .project-center-samples .pcs-table .col-project {
+                width: 44%;
+            }
+
+            .project-center-samples .pcs-table .col-count {
+                width: 14%;
+                text-align: left; /* ← 靠左显示，不再贴右边 */
+                padding-left: 0;
+                padding-right: 12px;
+            }
+
+            /* “项目 — 样本数”视觉破折号（表头与数据行一致） */
+            .project-center-samples .pcs-table th.col-count::before,
+            .project-center-samples .pcs-table td.col-count::before {
+                display: inline-block;
+                margin: 0 8px 0 4px; /* 破折号与左右留些空隙 */
+                color: #bfbfbf;
+                font-weight: 400;
+            }
+
+            /* 链接样式 */
+            .project-center-samples .project-link {
+                color: #1c5fd4;
+                text-decoration: none;
+            }
+
+            .project-center-samples .project-link:hover {
+                text-decoration: underline;
+            }
+
+            /* “样本数”徽章 */
+            .project-center-samples .count-link {
+                display: inline-block;
+                min-width: 2.2rem;
+                text-align: center;
+                padding: .2rem .55rem;
+                border-radius: 999px;
+                background: #eef5ff;
+                border: 1px solid #d1e3ff;
+                color: #1f4fbf;
+                text-decoration: none;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .project-center-samples .count-link:hover {
+                border-color: #9cc1ff;
+                background: #e8f1ff;
+            }
+
+            /* 整行可点击时的指针提示（不影响 <a>） */
+            .project-center-samples tr[data-href] {
+                cursor: pointer;
+            }
+
+            .project-center-samples tr[data-href] a {
+                cursor: pointer;
+            }
+
+            /* 空数据占位 */
+            .project-center-samples .empty {
+                margin: 24px 0;
+                padding: 24px;
+                border: 1px dashed #e5e5e5;
+                border-radius: 12px;
+                background: #fafafa;
+                color: #888;
+                text-align: center;
+            }
+
+            /* 窄屏优化 */
+            @media (max-width: 1200px) {
+                .project-center-samples .pcs-table .col-center {
+                    width: 40%;
+                }
+
+                .project-center-samples .pcs-table .col-project {
+                    width: 46%;
+                }
+
+                .project-center-samples .pcs-table .col-count {
+                    width: 14%;
+                }
+            }
+
+            @media (max-width: 960px) {
+                .project-center-samples .pcs-table .col-center,
+                .project-center-samples .pcs-table .col-project {
+                    max-width: 42vw;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
+
+            /* 暗色模式（如果系统是深色主题） */
+            @media (prefers-color-scheme: dark) {
+                .project-center-samples .pcs-table thead th {
+                    background: #111;
+                    border-bottom-color: #2a2a2a;
+                }
+
+                .project-center-samples .pcs-table tbody tr {
+                    background: #151515;
+                    border-color: #262626;
+                }
+
+                .project-center-samples .pcs-table tbody tr:hover {
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+                }
+
+                .project-center-samples .count-badge {
+                    background: #112240;
+                    border-color: #1e3a8a;
+                    color: #93c5fd;
+                }
+
+                .project-center-samples .count-link {
+                    background: #0f172a;
+                    border-color: #1e3a8a;
+                    color: #93c5fd;
+                }
+
+                .project-center-samples .pcs-table th.col-count::before,
+                .project-center-samples .pcs-table td.col-count::before {
+                    color: #5b5b5b;
+                }
+            }
+        </style>
+
+        <div class="project-center-samples">
+
+            <!-- 标题 + 总计（安全回退：没有 total_count 也不报错） -->
+            <div class="pcs-header" tal:define="total view/total_count | nothing">
+                <h1 class="page-title" tal:content="view/title">项目样本数</h1>
+                <span class="count-badge" tal:condition="total">
+          总计 <strong tal:content="total">0</strong>
+        </span>
+            </div>
+
+            <!-- 表格 -->
+            <table class="pcs-table">
+                <thead>
+                <tr>
+                    <th class="col-center">中心</th>
+                    <th class="col-project">项目</th>
+                    <th class="col-count">样本数</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tal:rows repeat="r view/rows">
+                    <tr tal:attributes="data-href r/list_url">
+                        <td class="col-center">
+                            <span class="center-title" tal:content="r/center_title">中心名称</span>
+                        </td>
+                        <td class="col-project">
+                            <a class="project-link"
+                                     tal:attributes="href r/list_url"
+                                     tal:content="r/project_title">项目名</a>
+                        </td>
+                        <td class="col-count">
+                            <a class="count-link"
+                                     tal:attributes="href r/list_url"
+                                     tal:content="r/sample_count">0</a>
+                        </td>
+                    </tr>
+                </tal:rows>
+
+                <!-- 空数据 -->
+                <tr tal:condition="not: view/rows">
+                    <td colspan="3">
+                        <div class="empty">暂无数据</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- 整行可点击（避开原有链接） -->
+            <script type="text/javascript">
+                (function () {
+                    document.addEventListener('click', function (e) {
+                        var tr = e.target.closest && e.target.closest('tr[data-href]');
+                        if (tr && !e.target.closest('a')) {
+                            window.location = tr.getAttribute('data-href');
+                        }
+                    }, false);
+                })();
+            </script>
+
+        </div>
+    </metal:main>
+</metal:page>

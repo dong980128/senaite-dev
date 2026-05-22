@@ -1,0 +1,1453 @@
+<metal:page use-macro="context/main_template/macros/master"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core">
+
+    <metal:content fill-slot="content-core">
+
+        <link rel="stylesheet"
+              href="++resource++senaite.core.mysql/vendor/tabulator/tabulator.min.css"/>
+        <script src="++resource++senaite.core.mysql/vendor/exceljs/exceljs.min.js"></script>
+        <script src="++resource++senaite.core.mysql/vendor/tabulator/tabulator.min.js"></script>
+
+        <div class="card" style="margin-top:8px;">
+            <h2 style="margin:0 0 8px;">数据总表</h2>
+        </div>
+
+        <!-- HLA 统计 -->
+        <div class="card" id="hlaStatsCard" style="display:none; margin-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span class="badge" id="hlaStatsBadge">含有该基因组合</span>
+                    <span id="hlaStatsQuery" class="hla-query"></span>
+                </div>
+                <div style="text-align:right;">
+                    <div class="stats-number" id="hlaStatsNumber"></div>
+                    <div class="stats-percent" id="hlaStatsPercent"></div>
+                </div>
+            </div>
+            <div class="progress-wrap">
+                <div class="progress-bar" id="hlaStatsBar" style="width:0%;"></div>
+            </div>
+            <div class="muted" style="margin-top:6px;">占比（全库）</div>
+        </div>
+
+        <!-- 配置列 -->
+        <div class="card" style="margin-top:8px;">
+            <div style="margin-bottom:6px;color:#666; ">
+                配置表列 <span class="muted">单击开关；默认只显示常用字段</span>
+            </div>
+            <div id="colChips" class="chips"></div>
+        </div>
+
+        <!-- 工具栏 表格 -->
+        <div class="card table-wrap" style="margin-top:8px;">
+            <div class="toolbar">
+                <button type="button" class="btn" id="btnExportCSV">导出 CSV</button>
+                <button type="button" class="btn" id="btnExportXLSX">导出 Excel</button>
+                <span class="muted"
+                      style="margin-left:10px;">（支持：表头下拉筛选 / 排序 / 拖动列 / 调整列宽 / 勾选隐藏列）</span>
+            </div>
+            <div class="hla-table-wrap">
+                <div id="hlaTable"></div>
+            </div>
+        </div>
+
+        <style>
+
+            #portal-logo, header .site-title, .navbar .navbar-brand,
+            .documentFirstHeading {
+                display: none !important;
+            }
+
+            .card {
+                background: #fff;
+                border: 1px solid #e6e6e6;
+                border-radius: 8px;
+                padding: 16px 18px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+                margin: 0 12px;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+                grid-gap: 12px;
+                align-items: end;
+            }
+
+            label {
+                display: block;
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 4px;
+            }
+
+            input[type="text"], select {
+                width: 100%;
+                height: 36px;
+                border: 1px solid #d7dce6;
+                border-radius: 6px;
+                padding: 0 10px;
+                outline: none;
+                font-size: 13px;
+                background: #fff;
+            }
+
+            input[type="text"]:focus, select:focus {
+                border-color: #4c9aff;
+                box-shadow: 0 0 0 3px rgba(76, 154, 255, .15);
+            }
+
+            .btn {
+                display: inline-block;
+                height: 36px;
+                line-height: 36px;
+                padding: 0 14px;
+                border-radius: 6px;
+                border: 1px solid #2f7ad9;
+                background: #2f7ad9;
+                color: #fff;
+                cursor: pointer;
+                font-size: 13px;
+                text-decoration: none;
+                margin-right: 8px;
+            }
+
+            .btn:hover {
+                background: #276cc2;
+                border-color: #276cc2;
+            }
+
+            .muted {
+                color: #8a8a8a;
+                font-size: 12px;
+            }
+
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 28px;
+                padding: 0 10px;
+                border-radius: 999px;
+                border: 1px solid #2f7ad9;
+                background: #eef5ff;
+                color: #2f7ad9;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .hla-query {
+                font-size: 13px;
+                color: #d7263d;
+                font-weight: 700;
+            }
+
+            .progress-wrap {
+                margin-top: 10px;
+                width: 100%;
+                height: 10px;
+                background: #f0f2f5;
+                border-radius: 999px;
+                overflow: hidden;
+            }
+
+            .progress-bar {
+                height: 100%;
+                background: #2f7ad9;
+                border-radius: 999px;
+                transition: width .2s ease;
+            }
+
+            .stats-number {
+                font-size: 14px;
+                font-weight: 700;
+                color: #111;
+            }
+
+            .stats-percent {
+                font-size: 12px;
+                color: #666;
+                margin-top: 2px;
+            }
+
+            mark {
+                background: #fff2b3;
+                padding: 0 2px;
+                border-radius: 3px;
+            }
+
+            .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                border: 1px solid #d7dce6;
+                border-radius: 999px;
+                padding: 6px 10px;
+                background: #fff;
+                cursor: pointer;
+                user-select: none;
+                font-size: 12px;
+                color: #333;
+            }
+
+            .chip input {
+                margin: 0;
+            }
+
+            .table-wrap {
+                padding-top: 12px;
+            }
+
+            .toolbar {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            mark {
+                background: #fff3cd;
+                padding: 0 2px;
+            }
+
+            /* ===== Tabulator 纯白风格（全白 / 无竖线 / 只有横线，接近图2） ===== */
+            #hlaTable .tabulator {
+                background: #fff !important;
+                border: 1px solid #e6e6e6;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            /* 表头：纯白 + 只保留底部横线 */
+            #hlaTable .tabulator .tabulator-header {
+                background: #fff !important;
+                border: none !important;
+                border-bottom: 1px solid #eaeaea !important;
+            }
+
+            #hlaTable .tabulator .tabulator-header .tabulator-col {
+                background: #fff !important;
+                border: none !important; /* 去竖线 */
+                padding: 6px 10px;
+                font-weight: 600;
+            }
+
+            /* 行：全白（去斑马纹） */
+            #hlaTable .tabulator .tabulator-row {
+                background: #fff !important;
+                border: none !important;
+            }
+
+            #hlaTable .tabulator .tabulator-row:nth-child(even) {
+                background: #fff !important;
+            }
+
+            /* 单元格：去竖线，只保留底部横线 */
+            #hlaTable .tabulator .tabulator-row .tabulator-cell {
+                border: none !important;
+                border-bottom: 1px solid #f0f0f0 !important;
+                padding: 6px 10px;
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* 悬浮：淡灰（可删） */
+            #hlaTable .tabulator .tabulator-row:hover {
+                background: #fafafa !important;
+            }
+
+            /* footer：纯白 */
+            #hlaTable .tabulator .tabulator-footer {
+                background: #fff !important;
+                border-top: 1px solid #eaeaea !important;
+            }
+
+            /* header filter 控件 */
+            #hlaTable .tabulator-header-filter input,
+            #hlaTable .tabulator-header-filter select {
+                width: 100%;
+                height: 26px;
+                border: 1px solid #eaeaea;
+                border-radius: 6px;
+                padding: 2px 8px;
+                font-size: 12px;
+                background: #fff;
+                box-shadow: none;
+                outline: none;
+            }
+
+            #hlaTable select {
+                appearance: auto;
+                -webkit-appearance: auto;
+            }
+
+            .hla-table-wrap {
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: visible;
+            }
+
+            .hla-table-wrap .tabulator .tabulator-tableholder {
+                background: #fff !important;
+            }
+
+            .hla-table-wrap .tabulator {
+                height: auto !important;
+            }
+
+            /* ===== 分页栏底部扩展：每页条数 + 总数 ===== */
+            .hlav1-footer-extra {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 0 4px;
+                font-size: 13px;
+                color: #555;
+                flex-shrink: 0;
+            }
+
+            .hlav1-footer-extra .page-size-label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            }
+
+            .hlav1-footer-extra select#pageSizeSelect {
+                width: auto;
+                height: 28px;
+                border: 1px solid #d7dce6;
+                border-radius: 6px;
+                padding: 0 8px;
+                font-size: 13px;
+                background: #fff;
+                cursor: pointer;
+            }
+
+            .hlav1-footer-extra select#pageSizeSelect:focus {
+                border-color: #4c9aff;
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(76, 154, 255, .15);
+            }
+
+            .hlav1-total-label {
+                white-space: nowrap;
+                color: #333;
+                font-weight: 500;
+            }
+
+            .hlav1-total-label em {
+                font-style: normal;
+                color: #2f7ad9;
+                font-weight: 700;
+            }
+        </style>
+        <script type="text/javascript">
+            (function () {
+                const STORE_KEY = "hlav1_visible_cols";
+                const DEFAULT_VISIBLE = [
+                    "sample_id", "tumor_type", "hla_a", "hla_b", "hla_c", "source", "tissue_type",
+                    "patient_id", "nation", "ksh_id", "tissue",
+                    "center_name", "cancer", "disease_diagnosis"
+                ];
+
+                const ALL_COLS = [
+                    {key: "id", label: "ID"},
+                    {key: "sample_id", label: "受试者唯一编码"},
+                    {key: "tumor_type", label: "肿瘤类型"},
+                    {key: "hla_a", label: "HLA-A"},
+                    {key: "hla_b", label: "HLA-B"},
+                    {key: "hla_c", label: "HLA-C"},
+                    {key: "source", label: "数据来源"},
+                    {key: "tissue_type", label: "tissue 类型"},
+                    {key: "patient_id", label: "患者ID"},
+                    {key: "population", label: "民族"},
+                    {key: "nation", label: "国籍"},
+                    {key: "ksh_id", label: "KSH编号"},
+                    {key: "tissue", label: "tissue"},
+                    {key: "center_name", label: "中心名称"},
+                    {key: "cancer", label: "癌种"},
+                    {key: "disease_diagnosis", label: "疾病诊断"},
+                    {key: "mage_a4_detail", label: "MAGE-A4 病理"},
+                    {key: "mage_a4_hscore", label: "MAGE-A4 Hscore"},
+                    {key: "ropn1_detail", label: "ROPN1 病理"},
+                    {key: "ropn1_hscore", label: "ROPN1 Hscore"},
+                    {key: "mart_1_detail", label: "MART-1 病理"},
+                    {key: "mart_1_hscore", label: "MART-1 Hscore"},
+                    {key: "afp_detail", label: "AFP 病理"},
+                    {key: "afp_hscore", label: "AFP Hscore"},
+                    {key: "gp100_detail", label: "GP100 病理"},
+                    {key: "gp100_hscore", label: "GP100 Hscore"},
+                    {key: "hla_i_detail", label: "HLA-I 病理"},
+                    {key: "hla_i_hscore", label: "HLA-I Hscore"},
+                    {key: "cd8_detail", label: "CD8 病理"},
+                    {key: "cd8_hscore", label: "CD8 Hscore"},
+                    {key: "ny_eso_1_detail", label: "NY-ESO-1 病理"},
+                    {key: "ny_eso_1_hscore", label: "NY-ESO-1 Hscore"},
+                ];
+
+                function updateHlaStats(stats) {
+                    try {
+                        var card = document.getElementById("hlaStatsCard");
+                        if (!card) return;
+
+                        stats = stats || {};
+                        var q = (stats.hla_query || "").trim();
+                        // 后端可能因为特殊字符解析导致 hla_query 为空，这里兜底从输入框取值
+                        if (!q) {
+                            var hlaInput = document.querySelector('input[name="hla"]');
+                            q = hlaInput ? ((hlaInput.value || "").trim()) : "";
+                        }
+                        if (!q) {
+                            card.style.display = "none";
+                            return;
+                        }
+
+                        var matched = (stats.hla_matched_all !== null && stats.hla_matched_all !== undefined) ? stats.hla_matched_all : 0;
+                        var totalAll = (stats.total_all !== null && stats.total_all !== undefined) ? stats.total_all : 0;
+                        var ratio = (stats.hla_ratio_all !== null && stats.hla_ratio_all !== undefined) ? stats.hla_ratio_all : 0;
+
+                        var pct = totalAll ? (ratio * 100.0) : 0;
+                        // 保留两位小数
+                        var pctText = (Math.round(pct * 100) / 100).toFixed(2) + "%";
+                        var qEl = document.getElementById("hlaStatsQuery");
+                        var nEl = document.getElementById("hlaStatsNumber");
+                        var pEl = document.getElementById("hlaStatsPercent");
+                        var bEl = document.getElementById("hlaStatsBar");
+                        if (qEl) qEl.textContent = q;
+                        if (nEl) nEl.textContent = matched + "/" + totalAll + " (" + pctText + ")";
+                        if (pEl) pEl.textContent = pctText;
+                        if (bEl) bEl.style.width = Math.min(100, Math.max(0, pct)) + "%";
+
+                        card.style.display = "";
+                    } catch (e) {
+                        console.warn("[HLAV1][stats] update failed", e);
+                    }
+                }
+
+                // ===== 新增：更新底部总条数显示 =====
+                function updateTotalCount(total) {
+                    try {
+                        var el = document.getElementById("totalCountLabel");
+                        if (!el) return;
+                        if (total === null || total === undefined) return;
+                        el.innerHTML = "共 <em>" + total + "</em> 条";
+                    } catch (e) {}
+                }
+
+                function decodeHtmlEntitiesDeep(str) {
+                    if (str === null || str === undefined) return "";
+                    let s = "" + str;
+
+                    for (let i = 0; i < 3; i++) {
+                        const textarea = document.createElement("textarea");
+                        textarea.innerHTML = s;
+                        const decoded = textarea.value;
+                        if (decoded === s) break;
+                        s = decoded;
+                    }
+                    return s;
+                }
+
+                function getVisibleCols() {
+                    try {
+                        const raw = window.localStorage.getItem(STORE_KEY);
+                        if (!raw) return DEFAULT_VISIBLE.slice();
+                        const arr = JSON.parse(raw);
+                        if (Array.isArray(arr) && arr.length) return arr;
+                        return DEFAULT_VISIBLE.slice();
+                    } catch (e) {
+                        return DEFAULT_VISIBLE.slice();
+                    }
+                }
+
+                function setVisibleCols(cols) {
+                    try {
+                        window.localStorage.setItem(STORE_KEY, JSON.stringify(cols || []));
+                    } catch (e) {
+                    }
+                }
+
+                function getQueryParams() {
+                    const p = new URLSearchParams(window.location.search || "");
+                    return {
+                        sample_id: p.get("sample_id") || "",
+                        hla: p.get("hla") || "",
+                        tumor_type: p.get("tumor_type") || "",
+                        cancer: p.get("cancer") || "",
+                        disease_diagnosis: p.get("disease_diagnosis") || "",
+                        b_size: p.get("b_size") || "50",
+                    };
+                }
+
+                function calcTableHeight() {
+                    const el = document.getElementById("hlaTable");
+                    if (!el) return 520;
+                    const top = el.getBoundingClientRect().top || 0;
+                    return Math.max(320, window.innerHeight - top - 20);
+                }
+
+                function fetchDistinct(field) {
+                    const url = window.location.pathname +
+                            (window.location.search ? window.location.search + "&" : "?") +
+                            "format=distinct&field=" + encodeURIComponent(field);
+                    return fetch(url, {credentials: "same-origin"})
+                            .then(r => r.json())
+                            .then(j => (j && j.values) ? j.values : []);
+                }
+
+                function headerSelectFilter(field) {
+                    return function (cell, onRendered, success, cancel) {
+                        const sel = document.createElement("select");
+                        sel.style.width = "100%";
+
+                        const optAll = document.createElement("option");
+                        optAll.value = "";
+                        optAll.textContent = decodeHtmlEntitiesDeep("全部");
+                        sel.appendChild(optAll);
+
+                        fetchDistinct(field).then(function (values) {
+                            (values || []).forEach(function (v) {
+                                const s = ("" + v).trim();
+                                if (!s) return;
+                                const opt = document.createElement("option");
+                                opt.value = s;
+                                opt.textContent = decodeHtmlEntitiesDeep(s);
+                                sel.appendChild(opt);
+                            });
+
+                            // 初始化选中当前过滤值
+                            const cur = cell.getValue();
+                            if (cur !== null && cur !== undefined && cur !== "") {
+                                sel.value = ("" + cur);
+                            }
+                        });
+
+                        onRendered(function () {
+                            sel.focus();
+                        });
+
+                        sel.addEventListener("change", function () {
+                            success(sel.value);
+                        });
+
+                        sel.addEventListener("blur", function () {
+                            success(sel.value);
+                        });
+
+                        return sel;
+                    };
+                }
+
+                function scoreHitFormatter(field) {
+                    return function (cell) {
+                        var row = cell.getRow().getData() || {};
+                        var v = cell.getValue();
+                        var text = (v === null || v === undefined) ? "" : ("" + v);
+
+                        if (row.rule_hit && row.rule_hit_score_fields && row.rule_hit_score_fields.indexOf(field) >= 0) {
+                            return '<span class="hlav1-hit-score">' + text + '</span>';
+                        }
+                        return text;
+                    };
+                }
+
+                function hlaAFormatter(cell) {
+                    var row = cell.getRow().getData() || {};
+                    var html = row.highlighted_hla_a_rule || row.highlighted_hla_a || (cell.getValue() || "");
+                    if (row.rule_hit) {
+                        html += ' <span class="hlav1-hit-flag">命中</span>';
+                    }
+                    return html;
+                }
+
+                function buildColumns() {
+                    const visible = new Set(getVisibleCols());
+                    const cols = [];
+
+                    function addCol(title, field, opts) {
+                        const c = Object.assign({
+                            title: decodeHtmlEntitiesDeep(title),
+                            field: field,
+                            headerSort: true,
+                            sorter: "string",
+                            visible: visible.has(field),
+                            resizable: true,
+                        }, (opts || {}));
+                        cols.push(c);
+                    }
+
+                    addCol("ID", "id", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("受试者唯一编码", "sample_id", {
+                        headerFilter: "input", headerFilterFunc: "like",
+                        formatter: function (cell) {
+                            var row = cell.getRow().getData() || {};
+                            var v = cell.getValue() || "";
+                            var url = row.subject_url;
+                            if (!url) return v;
+                            return '<a href="' + url + '" onclick="event.stopPropagation();">' + v + '</a>';
+                        }
+                    });
+                    addCol("肿瘤类型", "tumor_type", {
+                        headerFilter: headerSelectFilter("tumor_type"),
+                        headerFilterFunc: "="
+                    });
+                    addCol("HLA-A", "hla_a", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: hlaAFormatter
+                    });
+
+                    addCol("HLA-B", "hla_b", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: function (cell) {
+                            var row = cell.getRow().getData() || {};
+                            return row.highlighted_hla_b || (cell.getValue() || "");
+                        }
+                    });
+
+                    addCol("HLA-C", "hla_c", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: function (cell) {
+                            var row = cell.getRow().getData() || {};
+                            return row.highlighted_hla_c || (cell.getValue() || "");
+                        }
+                    });
+                    addCol("数据来源", "source", {headerFilter: headerSelectFilter("source"), headerFilterFunc: "="});
+                    addCol("tissue 类型", "tissue_type", {
+                        headerFilter: headerSelectFilter("tissue_type"),
+                        headerFilterFunc: "="
+                    });
+                    addCol("患者ID", "patient_id", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("民族", "population", {
+                        headerFilter: headerSelectFilter("population"),
+                        headerFilterFunc: "="
+                    });
+                    addCol("国籍", "nation", {headerFilter: headerSelectFilter("nation"), headerFilterFunc: "="});
+                    addCol("KSH编号", "ksh_id", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("tissue", "tissue", {headerFilter: headerSelectFilter("tissue"), headerFilterFunc: "="});
+                    addCol("中心名称", "center_name", {
+                        headerFilter: headerSelectFilter("center_name"),
+                        headerFilterFunc: "=",
+                        formatter: function (cell) {
+                            var row = cell.getRow().getData() || {};
+                            var name = cell.getValue() || "";
+                            var url = row.center_samples_url || row.center_url;
+                            if (!url) {
+                                return name;
+                            }
+
+                            function escHtml(s) {
+                                s = String(s == null ? "" : s);
+                                s = s.split("&").join("&amp;");
+                                s = s.split("<").join("&lt;");
+                                s = s.split(">").join("&gt;");
+                                s = s.split('"').join("&quot;");
+                                s = s.split("'").join("&#39;");
+                                return s;
+                            }
+
+                            var safeName = escHtml(name);
+
+                            return '<a href="' + url + '" class="hlav1-center-link" onclick="event.stopPropagation();">' + safeName + '</a>';
+                        }
+                    });
+
+                    addCol("癌种", "cancer", {headerFilter: headerSelectFilter("cancer"), headerFilterFunc: "="});
+                    addCol("疾病诊断", "disease_diagnosis", {
+                        headerFilter: headerSelectFilter("disease_diagnosis"),
+                        headerFilterFunc: "="
+                    });
+
+                    addCol("MAGE-A4 病理", "mage_a4_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("MAGE-A4 Hscore", "mage_a4_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("mage_a4_hscore")
+                    });
+
+                    addCol("ROPN1 病理", "ropn1_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("ROPN1 Hscore", "ropn1_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("ropn1_hscore")
+                    });
+
+                    addCol("MART-1 病理", "mart_1_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("MART-1 Hscore", "mart_1_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("mart_1_hscore")
+                    });
+
+                    addCol("AFP 病理", "afp_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("AFP Hscore", "afp_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("afp_hscore")
+                    });
+
+                    addCol("GP100 病理", "gp100_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("GP100 Hscore", "gp100_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("gp100_hscore")
+                    });
+
+                    addCol("HLA-I 病理", "hla_i_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("HLA-I Hscore", "hla_i_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("hla_i_hscore")
+                    });
+
+                    addCol("CD8 病理", "cd8_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("CD8 Hscore", "cd8_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("cd8_hscore")
+                    });
+
+                    addCol("NY-ESO-1 病理", "ny_eso_1_detail", {headerFilter: "input", headerFilterFunc: "like"});
+                    addCol("NY-ESO-1 Hscore", "ny_eso_1_hscore", {
+                        headerFilter: "input",
+                        headerFilterFunc: "like",
+                        formatter: scoreHitFormatter("ny_eso_1_hscore")
+                    });
+                    return cols;
+                }
+
+                function renderChips(table) {
+                    const wrap = document.getElementById("colChips");
+                    if (!wrap) return;
+
+                    wrap.innerHTML = "";
+                    const visible = new Set(getVisibleCols());
+
+                    ALL_COLS.forEach(function (c) {
+                        const label = decodeHtmlEntitiesDeep(c.label);
+                        const id = "chip_" + c.key;
+
+                        const chip = document.createElement("label");
+                        chip.className = "chip";
+                        chip.setAttribute("for", id);
+
+                        const cb = document.createElement("input");
+                        cb.type = "checkbox";
+                        cb.id = id;
+                        cb.checked = visible.has(c.key);
+
+                        cb.addEventListener("change", function () {
+                            const next = new Set(getVisibleCols());
+                            if (cb.checked) next.add(c.key);
+                            else next.delete(c.key);
+
+                            setVisibleCols(Array.from(next));
+
+                            const col = table.getColumn(c.key);
+                            if (!col) return;
+
+                            if (cb.checked) {
+                                col.show();
+                                table.redraw();
+
+                                setTimeout(function () {
+                                    try {
+                                        if (typeof table.scrollToColumn === "function") {
+                                            table.scrollToColumn(c.key, "middle", false);
+                                        } else {
+                                            const holder = document.querySelector("#hlaTable .tabulator-tableholder");
+                                            if (holder) holder.scrollLeft = holder.scrollWidth;
+                                        }
+                                    } catch (e) {
+                                    }
+                                }, 0);
+                            } else {
+                                col.hide();
+                                table.redraw();
+                            }
+                        });
+                        const span = document.createElement("span");
+                        span.textContent = label;
+
+                        chip.appendChild(cb);
+                        chip.appendChild(span);
+                        wrap.appendChild(chip);
+                    });
+                }
+
+
+                // 按照HTML显示的样式导出Excel（美化）
+                function stripHtmlToText(html) {
+                    if (html === null || html === undefined) return "";
+                    var div = document.createElement("div");
+                    div.innerHTML = String(html);
+                    return (div.textContent || div.innerText || "").replace(/\u00a0/g, " ").trim();
+                }
+
+                function pxToExcelWidth(px) {
+                    var n = parseInt(px, 10);
+                    if (!n || isNaN(n)) n = 120;
+                    return Math.max(10, Math.min(60, Math.round(n / 7)));
+                }
+
+                function isScoreField(field) {
+                    return /_hscore$/i.test(field || "");
+                }
+
+                function toExcelColName(n) {
+                    var s = "";
+                    while (n > 0) {
+                        var m = (n - 1) % 26;
+                        s = String.fromCharCode(65 + m) + s;
+                        n = Math.floor((n - 1) / 26);
+                    }
+                    return s;
+                }
+
+                function downloadBlob(blob, filename) {
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement("a");
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(function () {
+                        window.URL.revokeObjectURL(url);
+                        if (a.parentNode) {
+                            a.parentNode.removeChild(a);
+                        }
+                    }, 0);
+                }
+
+                function getExportColumns(table) {
+                    return (table.getColumns() || []).map(function (col) {
+                        var def = col.getDefinition ? (col.getDefinition() || {}) : {};
+                        var field = (typeof col.getField === "function") ? col.getField() : def.field;
+
+                        if (!field) return null;
+                        if (typeof col.isVisible === "function" && !col.isVisible()) return null;
+
+                        return {
+                            field: field,
+                            title: decodeHtmlEntitiesDeep(def.title || field),
+                            width: pxToExcelWidth(typeof col.getWidth === "function" ? col.getWidth() : 120)
+                        };
+                    }).filter(Boolean);
+                }
+
+                function buildExcelCellValue(field, row) {
+                    var v = row[field];
+                    if (v === null || v === undefined || v === "null") v = "";
+                    v = String(v);
+
+                    if (field === "sample_id" && row.subject_url) {
+                        return {
+                            text: v,
+                            hyperlink: row.subject_url,
+                            tooltip: row.subject_url
+                        };
+                    }
+
+                    if (field === "center_name" && (row.center_samples_url || row.center_url)) {
+                        var url = row.center_samples_url || row.center_url;
+                        return {
+                            text: v,
+                            hyperlink: url,
+                            tooltip: url
+                        };
+                    }
+
+                    return stripHtmlToText(v);
+                }
+
+                // 下载Excel的时候，拉取所有分页的数据
+                async function exportStyledExcel(table, onProgress) {
+                    if (typeof ExcelJS === "undefined") {
+                        alert("Excel 导出失败：ExcelJS 依赖未加载");
+                        return;
+                    }
+
+                    // 重点：不再用 table.getData()，而是把当前筛选条件下的所有分页数据拉回来
+                    var rows = await fetchAllRowsForExport(table, onProgress);
+                    var cols = getExportColumns(table);
+
+                    if (!cols.length) {
+                        alert("没有可导出的列");
+                        return;
+                    }
+                    if (!rows.length) {
+                        alert("没有可导出的数据");
+                        return;
+                    }
+
+                    var workbook = new ExcelJS.Workbook();
+                    workbook.creator = "SENAITE";
+                    workbook.created = new Date();
+
+                    var worksheet = workbook.addWorksheet("HLA数据库");
+                    worksheet.views = [{state: "frozen", ySplit: 1}];
+
+                    worksheet.columns = cols.map(function (c) {
+                        return {
+                            header: c.title,
+                            key: c.field,
+                            width: c.width
+                        };
+                    });
+
+                    // 表头样式
+                    var headerRow = worksheet.getRow(1);
+                    headerRow.height = 24;
+                    headerRow.eachCell(function (cell) {
+                        cell.font = {
+                            bold: true,
+                            size: 11,
+                            color: {argb: "FF333333"}
+                        };
+                        cell.alignment = {
+                            vertical: "middle",
+                            horizontal: "center",
+                            wrapText: true
+                        };
+                        cell.fill = {
+                            type: "pattern",
+                            pattern: "solid",
+                            fgColor: {argb: "FFF7F8FA"}
+                        };
+                        cell.border = {
+                            bottom: {style: "thin", color: {argb: "FFD9D9D9"}}
+                        };
+                    });
+
+                    rows.forEach(function (row) {
+                        var rowData = {};
+                        cols.forEach(function (c) {
+                            rowData[c.field] = buildExcelCellValue(c.field, row);
+                        });
+
+                        var excelRow = worksheet.addRow(rowData);
+                        excelRow.height = 22;
+
+                        excelRow.eachCell(function (cell, colNumber) {
+                            var field = cols[colNumber - 1].field;
+                            var hitFields = row.rule_hit_score_fields || [];
+
+                            cell.alignment = {
+                                vertical: "middle",
+                                wrapText: true
+                            };
+                            cell.border = {
+                                bottom: {style: "thin", color: {argb: "FFF0F0F0"}}
+                            };
+
+                            if (isScoreField(field)) {
+                                cell.alignment = {
+                                    vertical: "middle",
+                                    horizontal: "center",
+                                    wrapText: true
+                                };
+                            }
+
+                            // 整行命中：浅黄色
+                            if (row.rule_hit) {
+                                cell.fill = {
+                                    type: "pattern",
+                                    pattern: "solid",
+                                    fgColor: {argb: "FFFFF7CC"}
+                                };
+                            }
+
+                            // HLA-A 命中：加粗
+                            if (field === "hla_a" && row.rule_hit) {
+                                cell.font = {
+                                    bold: true,
+                                    color: {argb: "FF7A4E00"}
+                                };
+                            }
+
+                            // 命中的 Hscore：更深的黄色
+                            if (row.rule_hit && hitFields.indexOf(field) >= 0) {
+                                cell.fill = {
+                                    type: "pattern",
+                                    pattern: "solid",
+                                    fgColor: {argb: "FFFFE599"}
+                                };
+                                cell.font = {
+                                    bold: true,
+                                    color: {argb: "FF7A4E00"}
+                                };
+                            }
+
+                            // 链接字段
+                            if (field === "sample_id" || field === "center_name") {
+                                var linkUrl = (field === "sample_id")
+                                        ? row.subject_url
+                                        : (row.center_samples_url || row.center_url);
+
+                                if (linkUrl) {
+                                    cell.font = {
+                                        color: {argb: "FF0563C1"},
+                                        underline: true
+                                    };
+                                }
+                            }
+                        });
+                    });
+
+                    worksheet.autoFilter = "A1:" + toExcelColName(cols.length) + "1";
+                    var buffer = await workbook.xlsx.writeBuffer();
+                    var blob = new Blob(
+                            [buffer],
+                            {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                    );
+
+                    var ts = new Date();
+                    var pad = function (n) {
+                        return n < 10 ? ("0" + n) : String(n);
+                    };
+
+                    var filename = "data_" +
+                            ts.getFullYear() +
+                            pad(ts.getMonth() + 1) +
+                            pad(ts.getDate()) + "_" +
+                            pad(ts.getHours()) +
+                            pad(ts.getMinutes()) +
+                            pad(ts.getSeconds()) + ".xlsx";
+
+                    downloadBlob(blob, filename);
+                }
+
+                function buildRemoteRequestParams(table, page, size) {
+                    var p = {
+                        format: "json",
+                        page: page || 1,
+                        size: size || 200,
+                        sample_id: document.querySelector('input[name="sample_id"]') ? (document.querySelector('input[name="sample_id"]').value || "") : "",
+                        tumor_type: document.querySelector('input[name="tumor_type"]') ? (document.querySelector('input[name="tumor_type"]').value || "") : "",
+                        cancer: document.querySelector('input[name="cancer"]') ? (document.querySelector('input[name="cancer"]').value || "") : "",
+                        disease_diagnosis: document.querySelector('input[name="disease_diagnosis"]') ? (document.querySelector('input[name="disease_diagnosis"]').value || "") : "",
+                        hla_a: document.querySelector('input[name="hla_a"]') ? (document.querySelector('input[name="hla_a"]').value || "") : "",
+                        hla_b: document.querySelector('input[name="hla_b"]') ? (document.querySelector('input[name="hla_b"]').value || "") : "",
+                        hla_c: document.querySelector('input[name="hla_c"]') ? (document.querySelector('input[name="hla_c"]').value || "") : ""
+                    };
+
+                    var sorters = [];
+                    try {
+                        sorters = table.getSorters ? (table.getSorters() || []) : [];
+                    } catch (e) {
+                    }
+                    if (sorters.length) {
+                        p.sorters = JSON.stringify(sorters);
+                    }
+
+                    var filters = [];
+                    try {
+                        filters = table.getHeaderFilters ? (table.getHeaderFilters() || []) : [];
+                    } catch (e) {
+                    }
+                    if (filters.length) {
+                        p.filter = JSON.stringify(filters);
+                    }
+
+                    return p;
+                }
+                async function fetchExportPage(table, page, size) {
+                    var params = buildRemoteRequestParams(table, page, size);
+                    var qs = new URLSearchParams(params);
+                    qs.set("_ts", String(Date.now()));
+
+                    var url = base_url + (base_url.indexOf("?") >= 0 ? "&" : "?") + qs.toString();
+
+                    var resp = await fetch(url, {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: {
+                            "Accept": "application/json"
+                        },
+                        cache: "no-store"
+                    });
+
+                    if (!resp.ok) {
+                        throw new Error("导出数据请求失败，HTTP " + resp.status);
+                    }
+
+                    return await resp.json();
+                }
+
+                async function fetchAllRowsForExport(table, onProgress) {
+
+                    var exportPageSize = 200;
+                    var first = await fetchExportPage(table, 1, exportPageSize);
+
+                    var rows = Array.isArray(first.data) ? first.data.slice() : [];
+                    var lastPage = parseInt(first.last_page || 1, 10) || 1;
+                    var total = parseInt(first.total || rows.length || 0, 10) || 0;
+
+                    if (onProgress) {
+                        onProgress(1, lastPage, rows.length, total);
+                    }
+
+                    for (var page = 2; page <= lastPage; page++) {
+                        var payload = await fetchExportPage(table, page, exportPageSize);
+                        var chunk = Array.isArray(payload.data) ? payload.data : [];
+                        if (chunk.length) {
+                            rows = rows.concat(chunk);
+                        }
+
+                        if (onProgress) {
+                            onProgress(page, lastPage, rows.length, total);
+                        }
+                    }
+
+                    return rows;
+                }
+
+                const q = getQueryParams();
+                const base_url = window.location.pathname;
+                const pageSize = parseInt(q.b_size || "50", 10) || 50;
+
+                // ===== 新增：构建底部 footer 扩展 HTML =====
+                var footerExtraHtml = '<div class="hlav1-footer-extra">' +
+                    '<span class="page-size-label">每页显示：' +
+                    '<select id="pageSizeSelect">' +
+                    '<option value="20">20 条</option>' +
+                    '<option value="50">50 条</option>' +
+                    '<option value="100">100 条</option>' +
+                    '<option value="200">200 条</option>' +
+                    '</select>' +
+                    '</span>' +
+                    '<span class="hlav1-total-label" id="totalCountLabel">共 - 条</span>' +
+                    '</div>';
+
+                var table = new Tabulator("#hlaTable", {
+                    // layout: "fitDataStretch",
+                    layout: "fitDataFill",
+                    resizableColumns: true,
+                    columnMinWidth: 110,
+                    // height: calcTableHeight(),
+                    movableColumns: true,
+                    resizableColumnFit: true,
+                    ajaxURL: base_url,
+                    ajaxConfig: "GET",
+                    ajaxFiltering: true,
+                    ajaxSorting: true,
+                    filterMode: "remote",
+                    sortMode: "remote",
+                    pagination: true,
+                    paginationMode: "remote",
+                    paginationSize: pageSize,
+                    // ===== 新增：自定义 footer 插入每页条数 + 总数 =====
+                    footerElement: footerExtraHtml,
+                    rowFormatter: function (row) {
+                        var data = row.getData() || {};
+                        var el = row.getElement();
+
+                        el.classList.remove("hlav1-rule-hit-row");
+                        el.removeAttribute("title");
+                        el.style.background = "";
+                        var cells = el.querySelectorAll(".tabulator-cell");
+                        cells.forEach(function (cell) {
+                            cell.style.background = "";
+                        });
+
+                        if (data.rule_hit) {
+                            el.classList.add("hlav1-rule-hit-row");
+                            el.style.background = "#fff7cc";
+                            cells.forEach(function (cell) {
+                                cell.style.background = "#fff7cc";
+                            });
+                            if (data.rule_hit_tip) {
+                                el.setAttribute("title", data.rule_hit_tip);
+                            }
+                        }
+                    },
+
+                    columns: buildColumns(),
+                    ajaxResponse: function (url, params, response) {
+                        try {
+                            if (response && response.stats) {
+                                updateHlaStats(response.stats);
+                            } else {
+                                updateHlaStats({
+                                    hla_query: document.querySelector('input[name="hla"]')
+                                            ? (document.querySelector('input[name="hla"]').value || "")
+                                            : ""
+                                });
+                            }
+                        } catch (e) {
+                        }
+
+                        // ===== 新增：更新底部总条数 =====
+                        try {
+                            if (response && response.total !== undefined) {
+                                updateTotalCount(response.total);
+                            }
+                        } catch (e) {}
+
+                        return response;
+                    },
+
+                    ajaxURLGenerator: function (url, config, params) {
+                        var p = {};
+                        p.format = "json";
+                        p.page = params.page || 1;
+                        p.size = params.size || pageSize;
+
+                        // 顶部查询条件
+                        p.sample_id = document.querySelector('input[name="sample_id"]') ? (document.querySelector('input[name="sample_id"]').value || "") : "";
+                        p.hla = document.querySelector('input[name="hla"]') ? (document.querySelector('input[name="hla"]').value || "") : "";
+                        p.tumor_type = document.querySelector('input[name="tumor_type"]') ? (document.querySelector('input[name="tumor_type"]').value || "") : "";
+                        p.cancer = document.querySelector('input[name="cancer"]') ? (document.querySelector('input[name="cancer"]').value || "") : "";
+                        p.disease_diagnosis = document.querySelector('input[name="disease_diagnosis"]') ? (document.querySelector('input[name="disease_diagnosis"]').value || "") : "";
+
+                        // 远程排序
+                        var sorters = params.sorters || params.sort || [];
+                        if (sorters && sorters.length) {
+                            p.sorters = JSON.stringify(sorters);
+                        }
+
+                        // 远程过滤
+                        var filters = params.filters || params.filter || [];
+                        if (filters && filters.length) {
+                            p.filter = JSON.stringify(filters);
+                        }
+
+                        return url + (url.indexOf("?") >= 0 ? "&" : "?") + new URLSearchParams(p).toString();
+                    }
+                });
+
+                table.on("tableBuilt", function () {
+                    table.setData(base_url);
+
+                    // ===== 新增：初始化每页条数下拉选中值 + 绑定切换事件 =====
+                    var sel = document.getElementById("pageSizeSelect");
+                    if (sel) {
+                        sel.value = String(pageSize);
+                        sel.addEventListener("change", function () {
+                            var newSize = parseInt(sel.value, 10) || 50;
+                            table.setPageSize(newSize);
+                            table.setPage(1);
+                        });
+                    }
+                });
+
+                renderChips(table);
+                var btnCSV = document.getElementById("btnExportCSV");
+                if (btnCSV) btnCSV.addEventListener("click", function () {
+                    table.download("csv", "hlav1.csv");
+                });
+
+                var btnXLSX = document.getElementById("btnExportXLSX");
+                if (btnXLSX) {
+                    btnXLSX.onclick = async function () {
+                        var oldText = btnXLSX.textContent;
+                        try {
+                            btnXLSX.disabled = true;
+                            btnXLSX.textContent = "准备导出...";
+
+                            await exportStyledExcel(table, function (page, lastPage, loaded, total) {
+                                btnXLSX.textContent = "导出中 " + page + "/" + lastPage + "（" + loaded + "/" + total + "）";
+                            });
+
+                        } catch (e) {
+                            alert("Excel 导出失败：" + (e && e.message ? e.message : e));
+                        } finally {
+                            btnXLSX.disabled = false;
+                            btnXLSX.textContent = oldText;
+                        }
+                    };
+                }
+
+                // 自适应高度（窗口变化时）
+                window.addEventListener("resize", function () {
+                    try {
+                        table.setHeight(calcTableHeight());
+                        // table.redraw(true);
+                        table.redraw();
+                    } catch (e) {
+                    }
+                });
+
+            })();
+
+        </script>
+        <style id="hlav1_tabulator_override">
+            /* 只针对这一张表：#hlaTable（Tabulator 会把它变成 .tabulator） */
+            #hlaTable.tabulator {
+                background: #fff !important;
+                border: none !important;
+            }
+
+            #hlaTable.tabulator .tabulator-header {
+                background: #fff !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-bottom: 1px solid #eaeaea !important;
+            }
+
+            #hlaTable.tabulator .tabulator-header .tabulator-col {
+                background: #fff !important;
+                border: none !important;
+                border-right: none !important;
+            }
+
+            #hlaTable.tabulator .tabulator-row {
+                background: #fff !important;
+                border: none !important;
+            }
+
+            /* 去斑马纹：强制偶数行也白色 */
+            #hlaTable.tabulator .tabulator-row:nth-child(even),
+            #hlaTable.tabulator .tabulator-row:nth-child(odd) {
+                background: #fff !important;
+            }
+
+            /* 关键：干掉 tabulator.min.css 的 border-right:1px solid #aaa */
+            #hlaTable.tabulator .tabulator-cell {
+                border-right: none !important;
+                border-left: none !important;
+                border-top: none !important;
+                border-bottom: 1px solid #f0f0f0 !important; /* 只留横线 */
+                background: transparent !important;
+                padding: 8px 10px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* header filter */
+            #hlaTable.tabulator .tabulator-header input,
+            #hlaTable.tabulator .tabulator-header select {
+                background: #fff !important;
+                border: 1px solid #eaeaea !important;
+                border-radius: 6px !important;
+                height: 28px !important;
+                outline: none !important;
+            }
+
+            /* Loading / overlay 背景去灰 */
+            #hlaTable.tabulator .tabulator-loader {
+                background: rgba(255, 255, 255, 0.92) !important;
+            }
+
+            #hlaTable.tabulator .tabulator-loader .tabulator-loader-msg {
+                background: #fff !important;
+                border: 1px solid #eaeaea !important;
+                border-radius: 10px !important;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08) !important;
+                color: #333 !important;
+            }
+
+            #hlaTable.tabulator .tabulator-row.hlav1-rule-hit-row {
+                background: #fff7cc !important;
+            }
+
+            #hlaTable.tabulator .tabulator-row.hlav1-rule-hit-row .tabulator-cell {
+                background: #fff7cc !important;
+            }
+
+            #hlaTable.tabulator .tabulator-row.hlav1-rule-hit-row:hover {
+                background: #ffef99 !important;
+            }
+
+            #hlaTable.tabulator .tabulator-row.hlav1-rule-hit-row:hover .tabulator-cell {
+                background: #ffef99 !important;
+            }
+
+            .hlav1-hit-score {
+                display: inline-block;
+                padding: 0 6px;
+                border-radius: 4px;
+                background: #ffe08a;
+                color: #7a4b00;
+                font-weight: 700;
+            }
+
+            .hlav1-hit-flag {
+                display: inline-block;
+                margin-left: 6px;
+                padding: 1px 6px;
+                border-radius: 999px;
+                background: #ffb703;
+                color: #4a2f00;
+                font-size: 12px;
+                font-weight: 700;
+                vertical-align: middle;
+            }
+
+            /* ===== 新增：footer 布局让每页条数在左、翻页按钮在右 ===== */
+            #hlaTable.tabulator .tabulator-footer {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+                padding: 8px 12px !important;
+                background: #fff !important;
+                border-top: 1px solid #eaeaea !important;
+            }
+
+            /* Tabulator 把 footerElement 插在分页控件之前，order:-1 让它排到左边 */
+            #hlaTable.tabulator .tabulator-footer .hlav1-footer-extra {
+                order: -1;
+            }
+
+            /* 让原有分页按钮组靠右 */
+            #hlaTable.tabulator .tabulator-footer .tabulator-paginator {
+                order: 1;
+                margin-left: auto;
+            }
+
+            /* 每页条数下拉在 footer 里的精细样式覆盖 */
+            #hlaTable.tabulator .tabulator-footer #pageSizeSelect {
+                width: auto !important;
+                height: 28px !important;
+                border: 1px solid #d7dce6 !important;
+                border-radius: 6px !important;
+                padding: 0 8px !important;
+                font-size: 13px !important;
+                background: #fff !important;
+                cursor: pointer !important;
+                appearance: auto !important;
+                -webkit-appearance: auto !important;
+            }
+
+            #hlaTable.tabulator .tabulator-footer #pageSizeSelect:focus {
+                border-color: #4c9aff !important;
+                outline: none !important;
+                box-shadow: 0 0 0 2px rgba(76, 154, 255, .15) !important;
+            }
+
+            /* 总条数文字 */
+            #hlaTable.tabulator .tabulator-footer #totalCountLabel {
+                white-space: nowrap;
+                color: #333;
+                font-size: 13px;
+                font-weight: 500;
+            }
+
+            #hlaTable.tabulator .tabulator-footer #totalCountLabel em {
+                font-style: normal;
+                color: #2f7ad9;
+                font-weight: 700;
+            }
+        </style>
+
+    </metal:content>
+</metal:page>

@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="senaite.core">
+
+  <!-- package includes -->
+  <include package=".coordinate" />
+  <include package=".datagrid" />
+  <include package=".duration" />
+  <include package=".gpscoordinates" />
+  <include package=".listing" />
+  <include package=".queryselect" />
+  <include package=".selectother" />
+  <include package=".uidreference" />
+
+  <include file="address.zcml" />
+  <include file="datetimewidget.zcml" />
+  <include file="number.zcml" />
+  <include file="phone.zcml" />
+
+</configure>

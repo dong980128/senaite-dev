@@ -1,0 +1,158 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+         metal:use-macro="here/main_template/macros/master"
+         i18n:domain="senaite.core">
+
+<body>
+<metal:content-title fill-slot="content-title"/>
+<metal:content-description fill-slot="content-description"/>
+<metal:content-core fill-slot="content-core">
+    <div class="row"
+         style="width:99%"
+             tal:define="conditions python:view.get_conditions()"
+             tal:condition="nocall:conditions">
+        <div class="col-sm-12">
+            <!-- PATCH-PT-2026-01-06 -->
+            <h3 class="mb-4">
+                <i class="fas fa-list"/>
+                <span i18n:translate="" tal:content="python:view.get_analysis_name()"/>
+            </h3>
+            <form name="set-analysis-conditions-form"
+                  class="form"
+                  method="POST"
+                  enctype="multipart/form-data"
+                     tal:attributes="action string:${here/absolute_url}/set_analysis_conditions">
+
+                <table class="table table-sm small">
+                    <colgroup>
+                        <col style="width:20%"/>
+                        <col style="width:60%"/>
+                        <col style="width:20%"/>
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th i18n:translate="set_analysis_conditions_colname_condition">Condition</th>
+                        <th i18n:translate="set_analysis_conditions_colname_value">Value</th>
+                        <th i18n:translate="set_analysis_conditions_colname_report">Show in report</th>
+                    </tr>
+                    <tal:condition repeat="condition conditions">
+
+                        <tr tal:define="required python:condition.get('required') == 'on';
+                                is_checkbox python:condition.get('type') == 'checkbox';
+                                        required python:required and not is_checkbox;">
+                            <td>
+                                <label class="formQuestion">
+                                    <span tal:content="structure condition/title"/>
+                                    <span class="fieldRequired"
+                                             tal:condition="required"
+                                             i18n:attributes="title title_required;"
+                                          title="Required">&nbsp;</span>
+
+                                    <span class="formHelp discreet help-block-small"
+                                             tal:content="structure condition/description|nothing"/>
+                                </label>
+                            </td>
+                            <td tal:define="options condition/options|nothing">
+
+                                <!-- Hidden fields to keep original conditions info -->
+                                <input type="hidden" name="conditions.title:records"
+                                         tal:attributes="value condition/title"/>
+                                <input type="hidden" name="conditions.description:records"
+                                         tal:attributes="value condition/description"/>
+                                <input type="hidden" name="conditions.choices:records"
+                                         tal:attributes="value condition/choices"/>
+                                <input type="hidden" name="conditions.uid:records"
+                                         tal:attributes="value condition/uid"/>
+                                <input type="hidden" name="conditions.type:records"
+                                         tal:attributes="value condition/type"/>
+                                <input type="hidden" name="conditions.required:records"
+                                         tal:attributes="value condition/required"/>
+                                <input type="hidden" name="conditions.attachment:records"
+                                         tal:attributes="value condition/attachment/uid|nothing"/>
+
+                                <!-- 多选 checkbox -->
+                                <tal:block tal:condition="python:condition.get('type') == 'multiselect'"
+                                         tal:define="value python:condition.get('value')">
+                                    <tal:block tal:repeat="option options">
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="conditions.value:records:list"
+                                                     tal:define="selected python: value if isinstance(value, (list, tuple)) else [v.strip() for v in (value or '').split('|') if v.strip()]"
+                                                     tal:attributes="value option;
+                                                            checked python: option in selected"
+                                                   id="cond-${repeat/condition/index}-${repeat/option/index}"/>
+                                            <label class="form-check-label"
+                                                     tal:attributes="for string:cond-${repeat/condition/index}-${repeat/option/index}"
+                                                     tal:content="option" />
+                                        </div>
+                                    </tal:block>
+                                </tal:block>
+
+
+                                <!-- 单选 select -->
+                                <select tal:condition="python:options and condition.get('type') != 'multiselect'"
+                                         tal:define="value python:condition.get('value')"
+                                        class="form-control form-control-sm"
+                                         tal:attributes="name string:conditions.value:records">
+                                    <option tal:condition="not:required" />
+                                    <option tal:repeat="option options"
+                                             tal:attributes="value option;
+                                                    selected python:option == value"
+                                             tal:content="option" />
+                                </select>
+
+                                <tal:non_select condition="not:options">
+                                    <input tal:attributes="type condition/type;
+                                            value condition/value"
+                                             tal:condition="required"
+                                            required="required"
+                                            name="conditions.value:records"/>
+
+                                    <input tal:attributes="type condition/type;
+                                            value condition/value"
+                                             tal:condition="not:required"
+                                            name="conditions.value:records"/>
+                                </tal:non_select>
+
+                                <div tal:define="attachment condition/attachment|nothing"
+                                         tal:condition="attachment" class="mt-2">
+
+                                    <a tal:content="attachment/filename"
+                                             tal:attributes="href attachment/download_url"/>
+                                </div>
+
+                            </td>
+                            <td>
+                                <!-- Toggle to display/hide in results report -->
+                                <input type="checkbox"
+                                       name="conditions.report:records"
+                                         tal:attributes="checked python:condition.get('report', 'off') == 'on' or None"/>
+                            </td>
+                        </tr>
+                    </tal:condition>
+                </table>
+
+
+                <div class="form-group mt-2">
+                    <input class="btn btn-sm btn-primary"
+                           type="submit"
+                           name="set_conditions"
+                             i18n:attributes="value"
+                           value="Set Conditions"/>
+                </div>
+
+                <!-- hidden fields -->
+                <input type="hidden" name="submitted" value="1"/>
+                <input type="hidden" name="uid"
+                         tal:attributes="value python:view.get_uid_from_request()" />
+                <input tal:replace="structure context/@@authenticator/authenticator"/>
+
+            </form>
+        </div>
+    </div>
+</metal:content-core>
+</body>
+</html>

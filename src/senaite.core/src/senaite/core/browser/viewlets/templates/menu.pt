@@ -1,0 +1,25 @@
+<tal:contentviews tal:define="ploneview context/@@plone;"
+                  tal:condition="ploneview/showToolbar"
+                  i18n:domain="senaite.core">
+
+  <tal:actions tal:repeat="action options/actions">
+
+    <!-- Contentviews -->
+    <li tal:define="actionid action/id;
+                    selected python:view.is_action_selected(action);"
+        tal:attributes="id string:contentview-${action/id};
+                        class python:selected and 'active nav-item' or 'nav-item'">
+
+      <tal:var>
+        <a href="#"
+           tal:attributes="href action/url;
+                           target action/link_target|nothing;
+                           class string:${action/cssClass} nav-link;">
+          <span tal:content="action/title" i18n:translate="">View name</span>
+        </a>
+      </tal:var>
+    </li>
+
+  </tal:actions>
+
+</tal:contentviews>

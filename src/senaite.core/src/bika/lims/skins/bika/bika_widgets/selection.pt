@@ -1,0 +1,135 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+         i18n:domain="plone">
+
+<head>
+    <title>字段历史记录控件</title>
+</head>
+
+<body>
+
+<metal:view_macro define-macro="view">
+    <span metal:define-macro="selection-field-view"
+             tal:define="uid context/UID|nothing"
+             tal:attributes="id string:parent-fieldname-$fieldName-$uid">
+
+        <span metal:define-slot="inside"
+                 tal:define="vocab python:field.Vocabulary(context);
+                value python:accessor();
+                display python:context.displayValue(vocab, value, widget)"
+                 tal:replace="structure display"
+                 i18n:translate="" />
+    </span>
+</metal:view_macro>
+
+<metal:define define-macro="edit">
+    <metal:use use-macro="field_macro|context/widgets/field/macros/edit">
+
+        <metal:fill fill-slot="widget_body"
+                 tal:define="vocab python:field.Vocabulary(context);
+                vlen python:len(vocab);
+                selectionview context/@@at_selection_widget;
+                selection python:selectionview.getSelected(vocab, value);
+                format python:widget.format">
+
+            <!-- Pulldown when long -->
+            <tal:longVocab condition="python:(vlen >= 4 and format == 'flex') or (format in ('select', 'pulldown'))">
+
+                <label tal:condition="not: widget/render_own_label | nothing"
+                        class="formQuestion"
+                         tal:attributes="for python:fieldName">
+                    <span tal:replace="python:widget.Label(here)" i18n:translate="" />
+                    <span class="required"
+                             tal:condition="field/required"
+                          title="Required"
+                             i18n:attributes="title title_required;">&nbsp;</span>
+                    <span class="formHelp"
+                             tal:define="description python:widget.Description(here)"
+                             tal:content="structure description"
+                             tal:attributes="id string:${fieldName}_help"
+                             i18n:translate="">Help</span>
+                </label>
+
+                <select tal:attributes="name fieldName; id fieldName;">
+                        <option tal:repeat="item vocab"
+                         tal:attributes="value item;
+                                selected python:item in selection and 'selected' or None"
+                         tal:content="python:vocab.getValue(item)"
+                         i18n:translate="" />
+                </select>
+
+                <tal:block tal:define="dummy python:setattr(widget, 'field', field)" />
+                <tal:block tal:define="history python:widget.getOldValue(context)"
+                         tal:condition="history">
+
+                    <div class="toggle-history" tal:attributes="data-history-id fieldName">
+                        <a href="javascript:void(0);"
+                                 i18n:translate="label_view_changes">View Changes</a>
+                    </div>
+
+                    <div class="old-value-container"
+                             tal:attributes="data-history-id fieldName"
+                         style="display: none;">
+                        <tal:loop tal:repeat="entry history">
+                            <div class="old-value"
+                                 style="font-size: 90%; color: #888; margin-top: 3px;">
+                                旧值：<span tal:replace="entry/old" />
+                                （修改人：<span tal:replace="entry/modified_by" />，
+                                修改时间：<span tal:replace="entry/modified" />）
+                            </div>
+                        </tal:loop>
+                    </div>
+
+                    <!-- 脚本嵌入在字段结构内部 -->
+                    <script type="text/javascript">
+                        (function toggleHistoryObserver() {
+                            if (window._historyToggleObserverRunning) return;
+                            window._historyToggleObserverRunning = true;
+
+                            const observer = new MutationObserver(() => {
+                                const links = document.querySelectorAll(".toggle-history a");
+
+                                links.forEach(link => {
+                                    if (link._historyBound) return;
+                                    link._historyBound = true;
+
+                                    link.addEventListener("click", function () {
+                                        const parent = this.closest(".toggle-history");
+                                        const historyId = parent.getAttribute("data-history-id");
+                                        const container = document.querySelector(
+                                                '.old-value-container[data-history-id="' + historyId + '"]'
+                                        );
+
+                                        if (!container) {
+                                            console.warn("❌ No container found for", historyId);
+                                            return;
+                                        }
+
+                                        const showing = container.style.display !== "none";
+                                        container.style.display = showing ? "none" : "block";
+
+                                        // 设置翻译 key + 英文 fallback
+                                        this.setAttribute("i18n:translate", showing ? "label_view_changes" : "label_hide_changes");
+                                    });
+                                });
+                            });
+
+                            observer.observe(document.body, {
+                                childList: true,
+                                subtree: true
+                            });
+                        })();
+                    </script>
+
+                </tal:block>
+
+            </tal:longVocab>
+
+        </metal:fill>
+    </metal:use>
+</metal:define>
+
+</body>
+</html>

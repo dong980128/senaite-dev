@@ -1,0 +1,44 @@
+<tal:language tal:condition="view/available">
+
+  <nav class="dropdown">
+
+    <a href="#"
+       class="nav-link dropdown-toggle"
+       data-toggle="dropdown"
+       aria-haspopup="true"
+       aria-expanded="false"
+       i18n:domain="plone">
+      <i class="fas fa-globe"></i>
+    </a>
+
+    <!-- Available Languages -->
+    <div class="dropdown-menu dropdown-menu-right"
+        role="menu"
+        aria-labelledby="portal-languageselector"
+        tal:define="languages view/languages;
+                    base_url context/@@plone_context_state/current_base_url;">
+
+      <tal:language repeat="lang languages">
+
+        <div tal:define="code lang/code;
+                         qs request/QUERY_STRING;
+                         params python:filter(lambda x: x and not x.startswith('set_language'), qs.split('&'));
+                         lang_param string:set_language=${code};
+                         new_params python:'&'.join(params + [lang_param]);
+                         selected lang/selected;
+                         codeclass string:language-${code};
+                         current python: selected and 'currentLanguage active dropdown-item' or 'dropdown-item';
+                         current_item python: selected and 'text-light' or '';"
+             tal:attributes="class string:${codeclass} ${current}">
+          <a href="#"
+             tal:define="name lang/native|lang/name;"
+             tal:attributes="href string:${base_url}?${new_params};
+                             class string:${current_item} text-decoration-none;
+                             title name">
+            <span tal:content="name"/>
+          </a>
+        </div>
+      </tal:language>
+    </div>
+  </nav>
+</tal:language>

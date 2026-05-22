@@ -1,0 +1,14 @@
+[main]
+host = https://www.transifex.com
+
+[o:senaite:p:senaite-core:r:senaite]
+file_filter = <lang>/LC_MESSAGES/senaite.core.po
+source_file = senaite.core.pot
+source_lang = en
+type = PO
+
+[o:senaite:p:senaite-core:r:plone]
+file_filter = <lang>/LC_MESSAGES/plone.po
+source_file = plone.pot
+source_lang = en
+type = PO

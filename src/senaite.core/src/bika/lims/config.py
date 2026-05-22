@@ -1,0 +1,206 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of SENAITE.CORE.
+#
+# SENAITE.CORE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, version 2.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright 2018-2025 by it's authors.
+# Some rights reserved, see README and LICENSE.
+
+from bika.lims import bikaMessageFactory as _
+from Products.Archetypes.public import DisplayList
+from senaite.core.p3compat import cmp
+from zope.i18n.locales import locales
+
+# Implicit module imports used by others
+# XXX Refactor these dependencies to explicit imports!
+from senaite.core.i18n import translate as t
+from senaite.core.permissions import *
+
+PROJECTNAME = "bika.lims"
+
+GLOBALS = globals()
+
+VERSIONABLE_TYPES = ('Calculation',
+                     )
+
+# Upper detection limit operand
+UDL = ">"
+
+# Lower detection limit operand
+LDL = "<"
+
+POINTS_OF_CAPTURE = DisplayList((
+    ('field', _('Field Analyses')),
+    ('lab', _('Lab Analyses')),
+))
+
+SERVICE_POINT_OF_CAPTURE = DisplayList((
+    ('field', _('Field')),
+    ('lab', _('Lab')),
+))
+
+PRESERVATION_CATEGORIES = DisplayList((
+    ('field', _('Field Preservation')),
+    ('lab', _('Lab Preservation')),
+))
+
+PRICELIST_TYPES = DisplayList((
+    ('AnalysisService', _('Analysis Services')),
+    ('LabProduct', _('Lab Products')),
+))
+
+ANALYSIS_TYPES = DisplayList((
+    ('a', _('Analysis')),
+    ('b', _('Blank')),
+    ('c', _('Control')),
+    ('d', _('Duplicate')),
+))
+STD_TYPES = DisplayList((
+    ('c', _('Control')),
+    ('b', _('Blank')),
+))
+GENDERS = DisplayList((
+    ('male', _('Male')),
+    ('female', _('Female')),
+))
+
+ADDRESS_TYPES = DisplayList((
+    ('physical', _('Physical address')),
+    ('mailing', _('Mailing address')),
+    ('billing', _('Billing address')),
+    ('shipping', _('Shipping address')),
+))
+
+QCANALYSIS_TYPES = DisplayList((
+    ('b', _('Blank QC analyses')),
+    ('c', _('Control QC analyses')),
+    ('d', _('Duplicate QC analyses'))
+))
+
+WEEKDAYS = DisplayList((
+    ('0', _('Monday')),
+    ('1', _('Tuesday')),
+    ('2', _('Wednesday')),
+    ('3', _('Thursday')),
+    ('4', _('Friday')),
+    ('5', _('Saturday')),
+    ('6', _('Sunday')),
+))
+
+currencies = locales.getLocale('en').numbers.currencies.values()
+currencies.sort(lambda x, y: cmp(x.displayName, y.displayName))
+
+CURRENCIES = DisplayList(
+    [(c.type, "%s (%s)" % (c.displayName, c.symbol))
+     for c in currencies]
+)
+
+VERIFIED_STATES = ('verified', 'published')
+
+DECIMAL_MARKS = DisplayList((
+    ('.', _('Dot (.)')),
+    (',', _('Comma (,)')),
+))
+
+SCINOTATION_OPTIONS = DisplayList((
+    ('1', 'aE+b / aE-b'),
+    ('2', 'ax10^b / ax10^-b'),
+    ('3', 'ax10^b / ax10^-b (with superscript)'),
+    ('4', 'a·10^b / a·10^-b'),
+    ('5', 'a·10^b / a·10^-b (with superscript)'),
+))
+WORKSHEET_LAYOUT_OPTIONS = (
+    ('analyses_classic_view', _('Classic')),
+    ('analyses_transposed_view', _('Transposed')),
+)
+DEFAULT_WORKSHEET_LAYOUT = 'analyses_classic_view'
+
+# Add-on folder to look for templates
+WS_TEMPLATES_ADDON_DIR = 'worksheets'
+
+MULTI_VERIFICATION_TYPE = DisplayList((
+    ('self_multi_enabled', _('Allow same user to verify multiple times')),
+    ('self_multi_not_cons', _('Allow same user to verify multiple times, but not consecutively')),
+    ('self_multi_disabled', _('Disable multi-verification for the same user')),
+))
+PRIORITIES = DisplayList((
+    ("", ""),
+    ('1', _('Highest')),
+    # ('2', _('High')),
+    ('3', _('Medium')),
+    # ('4', _('Low')),
+    ('5', _('Lowest')),
+))
+
+MIN_OPERATORS = DisplayList((
+    ('geq', ">="),
+    ('gt', '>')
+))
+MAX_OPERATORS = DisplayList((
+    ('leq', "<="),
+    ('lt', '<')
+))
+
+# 是/否/N/A 通用选项
+YES_NO_NA = DisplayList((
+    ("", ""),
+    ("yes", _("Yes")),
+    ("no", _("No")),
+    ("na", _("N/A")),
+))
+
+YES_NO = DisplayList((
+    ("", ""),
+    ("yes", _("Yes")),
+    ("no", _("No"))
+))
+
+# 运输方式：自运 / 物流快递
+TRANSPORT_METHOD = DisplayList((
+    ("", ""),
+    ("self", _("Self transport")),
+    ("logistics", _("Logistics / Express")),
+))
+
+STORAGE_CONDITIONS = DisplayList((
+    ("", ""),
+    ("room_temp", _("Room Temperature")),
+    ("Two to Eight Celsius", _("Two to Eight Celsius")),
+    ("Minus 20 Celsius", _("Minus 20 Celsius")),
+    ("Minus 80 Celsius (Dry Ice)", _("Minus 80 Celsius (Dry Ice)")),
+    ("Below Minus 130 Celsius (Vapor LN2)", _("Below Minus 130 Celsius (Vapor LN2)")),
+    ("Liquid Nitrogen", _("Liquid Nitrogen")),
+    ("other", _("Other")),
+))
+
+LESION_TYPE_VOCABULARY = DisplayList((
+    ("", ""),
+    ("Primary", _("Primary")),
+    ("Metastasis", _("Metastasis")),
+    ("Adjacent", _("Adjacent")),
+))
+
+ETHNICITY_VOCABULARY = DisplayList((
+    ("", ""),
+    ("Chinese", _("Chinese")),
+    ("Foreigner", _("Foreigner")),
+))
+
+COLLECTION_METHOD = DisplayList((
+    ("", ""),
+    ("puncture", _("Puncture")),
+    ("surgery", _("Surgery")),
+    ("other", _("Other")),
+))

@@ -1,0 +1,21 @@
+<tal:sidebar i18n:domain="plone">
+  <div tal:define="root view/navigation_root">
+
+    <div id="sidebar-header" class="border-bottom active">
+      <button type="button" id="sidebarCollapse" class="btn btn-link"
+              title="Toggle sidebar visibility"
+              i18n:attributes="title">
+        <i class="sidebar-toggle-icon"></i>
+      </button>
+    </div>
+
+    <div class="list-unstyled">
+      <ul class="nav navbar-nav">
+        <li tal:replace="structure view/createNavTree">
+          SUBTREE
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</tal:sidebar>

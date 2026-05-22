@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="LabProcess" meta_type="Dexterity FTI"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        i18n:domain="senaite.core">
+
+    <property name="title" i18n:translate="">LabProcess</property>
+    <property name="description" i18n:translate=""></property>
+
+    <property name="factory">LabProcess</property>
+    <property name="add_view_expr">string:${folder_url}/@@labprocess-add</property>
+
+    <property name="immediate_view">view</property>
+    <property name="global_allow">True</property>
+
+    <property name="filter_content_types">True</property>
+    <property name="allowed_content_types">
+        <element value="LabTask"/>
+    </property>
+
+    <property name="default_view">view</property>
+    <property name="view_methods">
+        <element value="view"/>
+    </property>
+
+    <property name="add_permission">cmf.AddPortalContent</property>
+
+    <!-- schema/klass -->
+    <property name="schema">senaite.core.labprocess.content.labprocess.ILabProcessSchema</property>
+    <property name="klass">senaite.core.labprocess.content.labprocess.LabProcess</property>
+
+    <property name="behaviors">
+        <element value="plone.app.content.interfaces.INameFromTitle"/>
+        <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+        <element value="plone.app.referenceablebehavior.referenceable.IReferenceable"/>
+    </property>
+
+</object>

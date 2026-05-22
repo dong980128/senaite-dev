@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="LabProcessTemplate" meta_type="Dexterity FTI"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        xmlns:form="http://namespaces.plone.org/supermodel/form"
+        i18n:domain="senaite.core">
+
+    <property name="title" i18n:translate="">LabProcessTemplate</property>
+    <property name="description" i18n:translate=""></property>
+    <property name="icon_expr">senaite_theme/icon/folder</property>
+    <property name="klass">plone.dexterity.content.Item</property>
+    <property name="factory">LabProcessTemplate</property>
+    <property name="add_view_expr">string:${folder_url}/++add++LabProcessTemplate</property>
+
+    <!-- 模板一般不允许全站到处加，只允许在 Setup 指定容器里加 -->
+    <property name="global_allow">False</property>
+
+    <!-- 默认视图 -->
+    <property name="default_view">view</property>
+    <property name="view_methods">
+        <element value="view"/>
+    </property>
+
+    <property name="behaviors">
+        <element value="plone.basic"/>
+        <element value="plone.namefromtitle"/>
+        <element value="plone.versioning"/>
+    </property>
+
+    <property name="model_source"><![CDATA[
+<model xmlns="http://namespaces.plone.org/supermodel/schema"
+       xmlns:form="http://namespaces.plone.org/supermodel/form"
+       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+       i18n:domain="senaite.core">
+
+  <schema>
+
+    <field name="process_keyword" type="zope.schema.TextLine">
+      <title i18n:translate="">Keyword</title>
+      <description i18n:translate="">Unique keyword for this process template.</description>
+      <required>True</required>
+    </field>
+
+    <field name="enabled" type="zope.schema.Bool">
+      <title i18n:translate="">Enabled</title>
+      <required>False</required>
+      <default>True</default>
+    </field>
+
+    <field name="departments" type="zope.schema.List">
+      <title i18n:translate="">Departments</title>
+      <description i18n:translate="">Optional. Multi-department supported.</description>
+      <required>False</required>
+      <value_type type="zope.schema.TextLine"/>
+    </field>
+
+    <field name="version" type="zope.schema.TextLine">
+      <title i18n:translate="">Version</title>
+      <required>False</required>
+    </field>
+
+    <field name="task_definition" type="zope.schema.Text">
+      <title i18n:translate="">Task Definition (JSON)</title>
+      <description i18n:translate="">JSON array of tasks/steps.</description>
+      <required>False</required>
+    </field>
+
+    <field name="extra_config" type="zope.schema.Text">
+      <title i18n:translate="">Extra Config (JSON)</title>
+      <required>False</required>
+    </field>
+
+  </schema>
+
+  <form:fieldset name="process" label="Process">
+    <form:field name="process_keyword"/>
+    <form:field name="enabled"/>
+    <form:field name="departments"/>
+    <form:field name="version"/>
+  </form:fieldset>
+
+  <form:fieldset name="tasks" label="Tasks">
+    <form:field name="task_definition"/>
+  </form:fieldset>
+
+  <form:fieldset name="advanced" label="Advanced">
+    <form:field name="extra_config"/>
+  </form:fieldset>
+
+  <form:widget field="task_definition" widget="z3c.form.browser.textarea.TextAreaFieldWidget"/>
+  <form:widget field="extra_config" widget="z3c.form.browser.textarea.TextAreaFieldWidget"/>
+
+</model>
+]]></property>
+
+</object>

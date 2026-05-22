@@ -1,0 +1,38 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:cmf="http://namespaces.zope.org/cmf"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="senaite.core">
+
+  <include package=".genericsetup"/>
+  <include package=".setupdata"/>
+
+  <!-- IBlobbable Adapter for UploadFileWrapper -->
+  <adapter factory=".auto_import_results.BlobbableUploadFileWrapper" />
+
+  <!-- Auto Import Results View -->
+  <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="auto_import_results"
+      class=".auto_import_results.AutoImportResultsView"
+      permission="zope.Public"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <browser:page
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      name="import"
+      class="senaite.core.exportimport.dataimport.ImportView"
+      permission="senaite.core.permissions.ImportInstrumentResults"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <adapter
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      factory="senaite.core.exportimport.dataimport.SetupDataSetList"
+      provides="bika.lims.interfaces.ISetupDataSetList"
+      />
+
+</configure>

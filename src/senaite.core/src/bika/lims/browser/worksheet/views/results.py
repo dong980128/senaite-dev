@@ -1,0 +1,277 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of SENAITE.CORE.
+#
+# SENAITE.CORE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, version 2.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright 2018-2025 by it's authors.
+# Some rights reserved, see README and LICENSE.
+import logging
+
+logger = logging.getLogger()
+
+from Products.Archetypes.public import DisplayList
+from Products.CMFCore.utils import getToolByName
+from Products.CMFPlone.utils import safe_unicode
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from plone.app.layout.globals.interfaces import IViewView
+from plone.memoize import view
+from senaite.core.p3compat import cmp
+from zope.interface import implements
+
+from bika.lims import api
+from bika.lims import bikaMessageFactory as _
+from bika.lims.browser import BrowserView
+from bika.lims.browser.worksheet.tools import showRejectionMessage
+from bika.lims.browser.worksheet.tools import getWorksheetLayouts
+from bika.lims.config import DEFAULT_WORKSHEET_LAYOUT
+from bika.lims.utils import getUsers
+from senaite.core.permissions.worksheet import can_manage_worksheets
+
+
+class ManageResultsView(BrowserView):
+    """Worksheet Manage Results View
+    """
+    implements(IViewView)
+    template = ViewPageTemplateFile("../templates/results.pt")
+
+    def __init__(self, context, request):
+        super(ManageResultsView, self).__init__(context, request)
+        self.icon = "{}/{}".format(
+            self.portal_url,
+            "/++plone++senai"
+            ""
+            "te.core.static/assets/icons/worksheet.svg"
+        )
+
+    def __call__(self):
+        # TODO: Refactor this function call
+        showRejectionMessage(self.context)
+
+        # Classic/Transposed or additional View Switch
+        view = self.context.getResultsLayout()
+        if view not in self.layout_displaylist.keys():
+            message = _("Layout view '{}' not found. Set '{}' as layout view.".format(view, DEFAULT_WORKSHEET_LAYOUT))
+            self.context.plone_utils.addPortalMessage(message, "warning")
+            view = DEFAULT_WORKSHEET_LAYOUT
+            self.context.setResultsLayout(view)
+
+        self.Analyses = api.get_view(
+            view, context=self.context, request=self.request)
+
+        if "confirm_analyst" in self.request:
+            analyst = self.request.get("analyst", "")
+            # if analyst and self.is_assignment_allowed() and self.can_edit_fields():
+            if analyst and self.can_edit_fields():
+                visible_uids = self._get_visible_analysis_uids()
+                all_analyses = self.context.getAnalyses(full_objects=True) or []
+                total = len(all_analyses)
+
+                logger.info("[WS][confirm_analyst] user=%s analyst=%s visible=%s total=%s",
+                            api.get_current_user().getUserName(),
+                            analyst, len(visible_uids), total)
+
+                # 只给“可见的分析”分配 analyst
+                for an in all_analyses:
+                    uid = api.get_uid(an)
+                    if uid in visible_uids:
+                        try:
+                            an.setAnalyst(analyst)
+                            an.reindexObject()
+                        except Exception:
+                            logger.exception("[WS][confirm_analyst] setAnalyst failed uid=%s", uid)
+
+                # 只有当“可见==全部”时，才允许设置worksheet级 analyst
+                if total and len(visible_uids) == total:
+                    self.context.setAnalyst(analyst)
+                    self.context.reindexObject()
+
+                self.context.plone_utils.addPortalMessage(_("Analyst saved."), "info")
+
+        # Save the results layout
+        rlayout = self.request.get("resultslayout", "")
+        if rlayout and rlayout in self.layout_displaylist.keys() \
+                and rlayout != self.context.getResultsLayout():
+            self.context.setResultsLayout(rlayout)
+            message = _("Changes saved.")
+            self.context.plone_utils.addPortalMessage(message, "info")
+
+        self.analystname = self.context.getAnalystName()
+        self.instrumenttitle = self.get_instrument_title()
+
+        # Check if the instruments used are valid
+        self.checkInstrumentsValidity()
+
+        return self.template()
+
+    @property
+    def layout_displaylist(self):
+        return getWorksheetLayouts()
+
+    def get_analysts(self):
+        """Returns Analysts
+        """
+        # roles = ["Manager", "LabManager", "Analyst"]
+        # return getUsers(self.context, roles)
+        return getUsers(self.context,["Analyst"])
+
+    @view.memoize
+    def get_instrument_title(self):
+        """Return the current instrument title
+        """
+        instrument = self.context.getInstrument()
+        if not instrument:
+            return ""
+        return api.get_title(instrument)
+
+    @view.memoize
+    def is_manage_allowed(self):
+        """Check if manage is allowed
+        """
+        # return can_manage_worksheets(self.context)
+        if can_manage_worksheets(self.context):
+            return True
+
+        roles = set(api.get_current_user().getRoles())
+        if "Analyst" not in roles:
+            return False
+
+        current = api.get_current_user().getUserName()
+        ws_analyst = self.context.getAnalyst()
+        return (not ws_analyst) or (ws_analyst == current)
+
+    @view.memoize
+    def is_assignment_allowed(self):
+        """Check if analyst assignment is allowed
+        """
+        if not self.is_manage_allowed():
+            return False
+        review_state = api.get_workflow_status_of(self.context)
+        edit_states = ["open", "to_be_verified"]
+        return review_state in edit_states
+
+    def getInstruments(self):
+        # TODO: Return only the allowed instruments for at least one contained
+        # analysis
+        bsc = getToolByName(self, 'senaite_catalog_setup')
+        items = [('', '')] + [(o.UID, o.Title) for o in
+                              bsc(portal_type='Instrument',
+                                  is_active=True)]
+        o = self.context.getInstrument()
+        if o and o.UID() not in [i[0] for i in items]:
+            items.append((o.UID(), o.Title()))
+        items.sort(lambda x, y: cmp(x[1].lower(), y[1].lower()))
+        return DisplayList(list(items))
+
+    def get_wide_interims(self):
+        """Returns a dictionary with the analyses services from the current
+        worksheet which have at least one interim with 'Wide' attribute set to
+        true and that have not been yet submitted
+
+        The structure of the returned dictionary is the following:
+        <Analysis_keyword>: {
+            'analysis': <Analysis_name>,
+            'keyword': <Analysis_keyword>,
+            'interims': {
+                <Interim_keyword>: {
+                    'value': <Interim_default_value>,
+                    'keyword': <Interim_key>,
+                    'title': <Interim_title>
+                }
+            }
+        }
+        """
+        outdict = {}
+        allowed_states = ['assigned', 'unassigned']
+        for analysis in self.context.getAnalyses():
+            # TODO Workflow - Analysis Use a query instead of this
+            if api.get_workflow_status_of(analysis) not in allowed_states:
+                continue
+
+            if analysis.getKeyword() in outdict.keys():
+                continue
+
+            andict = {
+                "analysis": analysis.Title(),
+                "keyword": analysis.getKeyword(),
+                "interims": {}
+            }
+
+            # Analysis Service interim defaults
+            for field in analysis.getInterimFields():
+                if field.get("wide", False):
+                    andict["interims"][field["keyword"]] = field
+
+            if andict["interims"]:
+                outdict[analysis.getKeyword()] = andict
+        return outdict
+
+    def checkInstrumentsValidity(self):
+        """Checks the validity of the instruments used in the Analyses If an
+        analysis with an invalid instrument (out-of-date or with calibration
+        tests failed) is found, a warn message will be displayed.
+        """
+        invalid = []
+        ans = self.context.getAnalyses()
+        for an in ans:
+            instrument = an.getInstrument()
+            if instrument and not instrument.isValid():
+                inv = "%s (%s)" % (
+                    safe_unicode(an.Title()), safe_unicode(instrument.Title()))
+                if inv not in invalid:
+                    invalid.append(inv)
+        if len(invalid) > 0:
+            message = _("Some analyses use out-of-date or uncalibrated "
+                        "instruments. Results edition not allowed")
+            message = "%s: %s" % (message, (", ".join(invalid)))
+            self.context.plone_utils.addPortalMessage(message, "warning")
+
+    # 非LabManager 禁止二次选择下拉框
+    def can_edit_fields(self):
+        roles = set(api.get_current_user().getRoles())
+        ws_analyst = self.context.getAnalyst()
+        if roles.intersection({"LabManager", "Manager"}):
+            return True
+
+        if "Analyst" in roles:
+            return not ws_analyst
+
+        return False
+        # is_new = not analyst
+        # if is_new:
+        #     return bool(roles.intersection({"LabManager", "Manager", "Analyst"}))
+        #
+        # return bool(roles.intersection({"LabManager", "Manager", "Analyst"}))
+
+    def _get_visible_analysis_uids(self):
+        """Return analysis UIDs that are visible in the current listing view for
+        the current user (after all permission/service filters)."""
+        try:
+            items = self.Analyses.folderitems()  # 这里已经包含过滤后的列表
+        except Exception:
+            logger.exception("[WS][confirm_analyst] cannot build folderitems")
+            return set()
+
+        uids = set()
+        for it in items:
+            uid = it.get("uid")
+            if not uid:
+                continue
+            # 排除空行/占位行
+            if str(uid).startswith("empty-"):
+                continue
+            if it.get("disabled", False):
+                continue
+            uids.add(uid)
+        return uids

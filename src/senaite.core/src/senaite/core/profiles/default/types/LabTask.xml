@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="LabTask" meta_type="Dexterity FTI"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        i18n:domain="senaite.core">
+
+  <property name="title" i18n:translate="">LabTask</property>
+  <property name="description" i18n:translate=""></property>
+
+  <property name="factory">LabTask</property>
+  <property name="add_view_expr">string:${folder_url}/++add++LabTask</property>
+
+  <property name="immediate_view">view</property>
+
+  <!-- 关键：不能全站随便加 -->
+  <property name="global_allow">False</property>
+
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+  </property>
+
+  <property name="default_view">view</property>
+  <property name="view_methods">
+    <element value="view"/>
+  </property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="schema">senaite.core.labprocess.content.labtask.ILabTaskSchema</property>
+  <property name="klass">senaite.core.labprocess.content.labtask.LabTask</property>
+
+  <property name="behaviors">
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable"/>
+  </property>
+
+</object>

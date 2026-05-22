@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object>
+
+    <!-- Viewlets in plone.htmlhead -->
+    <order manager="plone.htmlhead" skinname="*">
+        <viewlet name="senaite.core.static"/>
+        <viewlet name="senaite.app.listing.static"/>
+    </order>
+
+    <!-- Viewlets in plone.mainnavigation -->
+    <order manager="plone.mainnavigation" skinname="*" purge="True">
+    </order>
+
+    <!-- Viewlets in plone.toolbar -->
+    <order manager="plone.toolbar" skinname="*">
+        <viewlet name="plone.contentviews"/>
+    </order>
+
+    <!-- Viewlets in sample header -->
+    <order manager="senaite.sampleheader" skinname="*">
+    </order>
+
+    <!-- Viewlets in sample sections -->
+    <order manager="senaite.samplesections" skinname="*">
+        <viewlet name="senaite.core.samplesection.field_analyses"/>
+        <viewlet name="senaite.core.samplesection.lab_analyses"/>
+        <viewlet name="senaite.core.samplesection.qc_analyses"/>
+    </order>
+
+    <!-- Viewlets in sample footer -->
+    <order manager="senaite.samplefooter" skinname="*">
+    </order>
+
+    <!-- Viewlets in listing title -->
+    <order manager="senaite.listingtabletitle" skinname="*">
+        <viewlet name="senaite.core.listings.title"/>
+        <viewlet name="senaite.core.listings.actions"/>
+        <viewlet name="senaite.core.listings.add_samples"/>
+        <viewlet name="senaite.core.listings.labprocessruns"/>
+    </order>
+
+    <!-- Hidden viewlets in plone.htmlhead -->
+    <hidden manager="plone.htmlhead" skinname="*">
+        <viewlet name="plone.htmlhead.socialtags"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.portalheader -->
+    <hidden manager="plone.portalheader" skinname="*" purge="True">
+        <viewlet name="plone.searchbox"/>
+        <viewlet name="plone.anontools"/>
+        <viewlet name="plone.logo"/>
+        <viewlet name="plone.app.i18n.locales.languageselector"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.mainnavigation -->
+    <hidden manager="plone.mainnavigation" skinname="*" purge="True">
+        <viewlet name="plone.global_sections"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.abovecontent -->
+    <hidden manager="plone.abovecontent" skinname="*" purge="True">
+    </hidden>
+
+    <!-- Hidden viewlets in plone.abovecontenttitle -->
+    <hidden manager="plone.abovecontenttitle" skinname="*" purge="True">
+        <viewlet name="plone.abovecontenttitle.socialtags"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.belowcontenttitle -->
+    <hidden manager="plone.belowcontenttitle" skinname="*" purge="True">
+        <viewlet name="plone.belowcontenttitle.documentbyline"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.belowcontent -->
+    <hidden manager="plone.belowcontent" skinname="*" purge="True">
+        <viewlet name="plone.manage_portlets_fallback"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.belowcontentbody -->
+    <hidden manager="plone.belowcontentbody" skinname="*" purge="True">
+        <viewlet name="plone.abovecontenttitle.documentactions"/>
+    </hidden>
+
+    <!-- Hidden viewlets in plone.portalfooter -->
+    <hidden manager="plone.portalfooter" skinname="*" purge="True">
+        <viewlet name="plone.site_actions"/>
+    </hidden>
+
+</object>

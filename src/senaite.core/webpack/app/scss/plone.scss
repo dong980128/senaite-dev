@@ -1,0 +1,143 @@
+/* Plone overrides */
+.hiddenStructure {
+    @extend .d-none;
+}
+.discreet {
+    @extend .text-secondary;
+    @extend .small;
+}
+/* field error for DX forms */
+div.field.error>div.error {
+    @extend .text-danger;
+    &:before {
+        @extend .fas;
+        @extend .fa-exclamation-circle;
+        @extend .mr-1;
+    }
+}
+.breadcrumb {
+    border-radius: 0;
+    background-color: $breadcrumb-bg;
+    padding: .5rem 1rem;
+}
+a#setup-link {
+    @extend .btn;
+    @extend .btn-outline-secondary;
+    &:before {
+        @extend .fas;
+        @extend .fa-arrow-circle-left;
+        @extend .mr-1;
+    }
+}
+table.listing {
+    @extend .table;
+    @extend .table-bordered;
+    @extend .table-hover;
+    @extend .table-responsive;
+    @extend .table-sm;
+}
+div.autotoc-nav {
+    @extend .nav;
+    @extend .nav-tabs;
+    a { @extend .nav-link; }
+    a.active { margin-bottom: -1px; }
+}
+.portlet:not(.portletNavigationTree) {
+    @extend .card;
+    @extend .overflow-hidden;
+    @extend .mb-3;
+    .portletHeader {
+        @extend .card-header;
+        @extend .text-center;
+    }
+    .portletContent {
+        @extend .card-body;
+    }
+    .portletFooter {
+        @extend .card-footer;
+    }
+    input:not([name='submit']) {
+        @extend .form-control;
+        @extend .form-control-sm;
+    }
+    input[name='submit'] {
+        @extend .mt-2;
+        @extend .btn;
+        @extend .btn-sm;
+        @extend .btn-primary;
+    }
+}
+
+aside section nav.portletContent {
+    @extend .bg-light;
+    ul {
+        @extend .nav;
+        @extend .d-flex;
+        @extend .flex-column;
+        li {
+            @extend .nav-item;
+            a {
+                @extend .nav-link;
+            }
+        }
+    }
+}
+.portalMessage {
+    @extend .alert;
+    &.info { @extend .alert-info; }
+    &.warning { @extend .alert-warning; }
+    &.error { @extend .alert-danger; }
+}
+
+section>ol.configlets,
+section>ul.configlets {
+    @extend .list-group;
+    li {
+        @extend .list-group-item;
+        input[type='submit'] {
+            @extend .btn;
+            @extend .btn-sm;
+            @extend .btn-outline-secondary;
+        }
+    }
+}
+nav.pagination ul {
+    @extend .pagination;
+    li {
+        @extend .page-item;
+        a {
+            @extend .page-link;
+        }
+    }
+
+}
+/* Overlay fixtures */
+.pb-ajax {
+    border-radius: 3px;
+}
+.pb-ajax>div {
+    @extend .container-fluid;
+    width: 100%!important;
+}
+div.overlaybg div.close,
+div.overlay div.close {
+    opacity: 1;
+}
+
+/* Site setup */
+.portlet.portletNavigationTree.portletSiteSetup {
+    margin: 1.5rem 0;
+
+    ul.nav-pills li.nav-item {
+        padding-left: 0;
+    }
+}
+
+/* Header and description in content views */
+article#content header {
+  margin-bottom:15px;
+}
+
+.documentDescription {
+  font-size:95%;
+}

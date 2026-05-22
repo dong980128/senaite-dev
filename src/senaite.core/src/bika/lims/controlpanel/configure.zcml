@@ -1,0 +1,79 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="senaite.core">
+
+    <browser:page
+      for="bika.lims.interfaces.IAuditLog"
+      name="folder_view"
+      class=".auditlog.AuditLogView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IContainers"
+      name="folder_view"
+      class=".bika_containers.ContainersView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.ILabContacts"
+      name="folder_view"
+      class=".bika_labcontacts.LabContactsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IAnalysisSpecs"
+      name="folder_view"
+      class=".bika_analysisspecs.AnalysisSpecsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IInstruments"
+      name="folder_view"
+      class=".bika_instruments.InstrumentsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.ICalculations"
+      name="folder_view"
+      class=".bika_calculations.CalculationsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IAnalysisServices"
+      name="folder_view"
+      class=".bika_analysisservices.AnalysisServicesView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IAnalysisServices"
+      name="copy"
+      class=".bika_analysisservices.AnalysisServiceCopy"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+    <browser:page
+      for="bika.lims.interfaces.IReferenceDefinitions"
+      name="folder_view"
+      class=".bika_referencedefinitions.ReferenceDefinitionsView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+</configure>

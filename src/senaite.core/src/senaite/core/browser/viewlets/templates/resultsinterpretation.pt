@@ -1,0 +1,159 @@
+<div id="results-interpretation"
+     tal:condition="python:view.available()"
+     tal:define="panels python:view.get_panels"
+     i18n:domain="senaite.core">
+
+  <!-- title and icon -->
+  <h3 tal:define="icon view/icon_name|nothing;
+                  title view/title|nothing;
+                  portal context/@@plone_portal_state/portal"
+      tal:condition="title">
+    <img tal:condition="icon|nothing" tal:attributes="src string:${portal/absolute_url}/senaite_theme/icon/${icon}"/>
+    <span i18n:translate="" tal:content="title"/>
+  </h3>
+
+  <!-- Readonly Resultsinterpretation Field -->
+  <tal:readonly
+    tal:define="fieldName string:ResultsInterpretationDepts"
+    tal:condition="python:not view.is_edit_allowed()">
+
+    <div class="resultsinterpretations">
+
+      <!-- General Results Interpretation -->
+      <tal:general>
+        <table class="table-borderless w-100"
+               tal:define="text python:view.get_text(None, 'raw')">
+          <tr>
+            <th i18n:translate="">General</th>
+          </tr>
+          <tr>
+            <td tal:content="structure python:text or default"/>
+          </tr>
+        </table>
+      </tal:general>
+
+      <tal:panel repeat="panel panels">
+        <table class="table-borderless w-100"
+               tal:define="text python:view.get_text(panel, 'raw')">
+          <tr>
+            <th tal:content="panel/Title"/>
+          </tr>
+          <tr>
+            <td tal:content="structure python:text or default"/>
+          </tr>
+        </table>
+      </tal:panel>
+
+    </div>
+  </tal:readonly>
+
+
+  <!-- Editable Resultsinterpretation Field -->
+  <tal:edit
+    tal:define="fieldName string:ResultsInterpretationDepts"
+    tal:condition="python:view.is_edit_allowed()">
+
+    <form class="form"
+          name="arresultsinterpretation_form"
+          action="."
+          tal:attributes="action here/absolute_url"
+          enctype="multipart/form-data"
+          method="POST">
+
+      <input type="hidden" name="submitted" value="1"/>
+      <input tal:replace="structure context/@@authenticator/authenticator"/>
+
+      <!-- Interpretation templates selector -->
+      <div class="input-group input-group-sm flex-nowrap d-inline-flex w-auto mb-3 arinterpretationtemplates-selector">
+        <div class="input-group-prepend">
+          <span class="input-group-text" i18n:translate="">
+            Template
+          </span>
+        </div>
+        <select id="interpretationtemplate"
+                name="interpretationtemplate"
+                class="custom-select">
+          <option value="" i18n:translate="">Select template</option>
+          <tal:itemplates repeat="template view/get_interpretation_templates">
+            <option tal:attributes="value template/uid"
+                    tal:content="template/title"/>
+          </tal:itemplates>
+        </select>
+        <!-- Template insert button -->
+        <div class="input-group-append">
+          <button id="interpretationtemplate-insert"
+                  name="interpretationtemplate-insert"
+                  type="submit"
+                  class="btn btn-outline-primary btn-sm"
+                  i18n:translate="">
+            Use Template
+          </button>
+        </div>
+      </div>
+
+      <div class="arresultsinterpretation-container mb-2">
+        <!-- Tabs for panels (departments) -->
+        <ul class="nav nav-tabs" roles="tablist">
+          <li class="nav-item">
+            <a class="nav-link active"
+               data-toggle="tab"
+               href="#"
+               role="tab"
+               id="general"
+               tal:attributes="href string:#${fieldName}-general;
+                      data-uid string:${fieldName}-general;"
+               i18n:translate="">General</a>
+          </li>
+          <tal:panels repeat="panel panels">
+            <li class="nav-item">
+              <a class="nav-link"
+                 data-toggle="tab"
+                 href="#"
+                 role="tab"
+                 tal:attributes="id panel/Title;
+                        href string:#${fieldName}-${panel/UID};
+                        data-uid python:fieldName+'-'+panel.UID();"
+                 tal:content="panel/Title"/>
+            </li>
+          </tal:panels>
+        </ul>
+
+        <!-- TextAreas (RichText) for results interpretation -->
+        <div class="tab-content p-2 border-left border-bottom border-right">
+          <div class="tab-pane fade show active"
+               role="tabpanel"
+               tal:attributes="id string:${fieldName}-general;">
+            <input type="hidden"
+                   tal:attributes="name string:${fieldName}.uid:records:ignore_empty;
+                         id string:${fieldName}-uid-0;
+                         value string:general;"/>
+            <textarea class="my-2 mce_editable"
+                      tal:attributes="name string:${fieldName}.richtext:records:ignore_empty;
+                             id string:${fieldName}-richtext-0;"
+                      tal:content="python: view.get_text(None, 'raw')">
+            </textarea>
+          </div>
+
+          <tal:panel repeat="panel panels">
+            <div class="tab-pane fade"
+                 role="tabpanel"
+                 tal:define="uid panel/UID"
+                 tal:attributes="id string:${fieldName}-${uid};">
+              <input type="hidden"
+                     tal:attributes="name string:${fieldName}.uid:records:ignore_empty;
+                           id string:${fieldName}-uid-${repeat/panel/number};
+                           value string:${uid};"/>
+              <textarea class="my-2 mce_editable"
+                        tal:attributes="name string:${fieldName}.richtext:records:ignore_empty;
+                               id string:${fieldName}-richtext-${repeat/panel/number};"
+                        tal:content="python:view.get_text(panel, 'raw')">
+              </textarea>
+            </div>
+          </tal:panel>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" i18n:translate="">Save</button>
+    </form>
+  </tal:edit>
+
+</div>

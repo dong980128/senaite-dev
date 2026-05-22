@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<dc-workflow xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+             workflow_id="senaite_labtaskrun_workflow"
+             title="LabTaskRun Workflow"
+             description="Workflow for LabTaskRun"
+             state_variable="review_state"
+             initial_state="running"
+             manager_bypass="False"
+             i18n:domain="senaite.core">
+
+    <!-- ================= States ================= -->
+    <state state_id="running" title="Running" i18n:attributes="title">
+        <exit-transition transition_id="complete"/>
+        <exit-transition transition_id="retract"/>
+        <!--        <exit-transition transition_id="invalidate"/>-->
+    </state>
+
+    <state state_id="done" title="Done" i18n:attributes="title">
+        <exit-transition transition_id="retract"/>
+        <!--        <exit-transition transition_id="invalidate"/>-->
+    </state>
+
+    <state state_id="retracted" title="Retracted" i18n:attributes="title">
+        <exit-transition transition_id="reinstate"/>
+    </state>
+
+    <state state_id="invalid" title="Invalid" i18n:attributes="title">
+        <exit-transition transition_id="reinstate"/>
+    </state>
+
+    <!-- ================= Transitions ================= -->
+    <transition transition_id="complete" title="Complete" new_state="done"
+                trigger="USER" before_script="" after_script=""
+                i18n:attributes="title">
+        <action url="" category="workflow" icon="">Complete</action>
+        <guard>
+            <guard-expression>
+                python:modules['bika.lims.workflow.labtaskrun.guards'].guard_complete(here)
+            </guard-expression>
+        </guard>
+    </transition>
+
+    <transition transition_id="retract" title="Retract" new_state="retracted"
+                trigger="USER" before_script="" after_script=""
+                i18n:attributes="title">
+        <action url="" category="workflow" icon="">Retract</action>
+        <guard>
+            <guard-expression>
+                python:modules['bika.lims.workflow.labtaskrun.guards'].guard_retract(here)
+            </guard-expression>
+        </guard>
+    </transition>
+
+    <transition transition_id="invalidate" title="Invalidate" new_state="invalid"
+                trigger="USER" before_script="" after_script=""
+                i18n:attributes="title">
+        <action url="" category="workflow" icon="">Invalidate</action>
+        <guard>
+            <guard-expression>
+                python:modules['bika.lims.workflow.labtaskrun.guards'].guard_invalidate(here)
+            </guard-expression>
+        </guard>
+    </transition>
+
+    <transition transition_id="reinstate" title="Reinstate" new_state="running"
+                trigger="USER" before_script="" after_script=""
+                i18n:attributes="title">
+        <action url="" category="workflow" icon="">Reinstate</action>
+        <guard>
+            <guard-expression>
+                python:modules['bika.lims.workflow.labtaskrun.guards'].guard_reinstate(here)
+            </guard-expression>
+        </guard>
+    </transition>
+
+    <!-- ================= Variables ================= -->
+    <variable variable_id="action" for_catalog="False" for_status="True" update_always="True">
+        <description>Previous transition</description>
+        <default>
+            <expression>transition/getId|nothing</expression>
+        </default>
+        <guard></guard>
+    </variable>
+
+    <variable variable_id="actor" for_catalog="False" for_status="True" update_always="True">
+        <description>The ID of the user who performed the last transition</description>
+        <default>
+            <expression>user/getId</expression>
+        </default>
+        <guard></guard>
+    </variable>
+
+    <variable variable_id="comments" for_catalog="False" for_status="True" update_always="True">
+        <description>Comment about the last transition</description>
+        <default>
+            <expression>python:state_change.kwargs.get('comment', '')</expression>
+        </default>
+        <guard></guard>
+    </variable>
+
+    <variable variable_id="review_history" for_catalog="False" for_status="False" update_always="False">
+        <description>Provides access to workflow history</description>
+        <default>
+            <expression>state_change/getHistory</expression>
+        </default>
+        <guard></guard>
+    </variable>
+
+    <variable variable_id="time" for_catalog="False" for_status="True" update_always="True">
+        <description>When the previous transition was performed</description>
+        <default>
+            <expression>state_change/getDateTime</expression>
+        </default>
+        <guard></guard>
+    </variable>
+
+</dc-workflow>

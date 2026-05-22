@@ -1,0 +1,93 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="here/prefs_main_template/macros/master"
+      i18n:domain="senaite.core">
+
+  <body>
+
+    <metal:override fill-slot="top_slot"
+                    tal:define="disable_column_one python:request.set('disable_plone.leftcolumn', 1);
+                                disable_column_two python:request.set('disable_plone.rightcolumn', 1);"/>
+
+    <metal:block fill-slot="senaite_legacy_js"
+                 tal:define="portal context/@@plone_portal_state/portal;">
+      <script type="text/javascript"
+              src="senaite.core.setupview.js"
+              tal:attributes="src string:${portal/absolute_url}/++plone++senaite.core.static/js/senaite.core.setupview.js"></script>
+    </metal:block>
+
+    <div metal:fill-slot="prefs_configlet_main" id="lims-controlpanel">
+
+      <div id="setupview" class="row">
+
+        <div class="col-sm-12 mb-4">
+          <input id="searchbox"
+                 autofocus
+                 type="text"
+                 class="form-control form-control-lg"
+                 placeholder="Type to filter ..."
+                 i18n:attributes="placeholder">
+        </div>
+
+        <!-- The setup item -->
+        <tal:setup tal:define="setup python:view.setup">
+          <div class="tilewrapper col-xs-12 col-sm-6 col-md-4 col-lg-3">
+            <a class="tile setup text-capitalized text-decoration-none"
+               tal:attributes="href setup/absolute_url;
+                               title setup/Title"
+               i18n:attributes="title">
+              <div class="item text-truncate">
+                <img src="#"
+                     tal:replace="structure python:view.get_icon_for(setup, css_class='icon')"/>
+                <span class="title vcenter text-truncate d-inline-block"
+                     i18n:translate=""
+                     tal:content="setup/Title">
+                  Setup Item Title
+                </span>
+              </div>
+            </a>
+          </div>
+        </tal:setup>
+
+        <!-- The other setup items -->
+        <tal:tiles tal:repeat="item view/setupitems">
+          <div class="tilewrapper col-xs-12 col-sm-6 col-md-4 col-lg-3">
+            <a class="tile text-capitalized text-decoration-none"
+               tal:attributes="href item/absolute_url;
+                               title item/Title"
+               i18n:attributes="title">
+              <div class="item text-truncate">
+                <img src="#"
+                     class="icon"
+                     tal:replace="structure python:view.get_icon_for(item, css_class='icon')"/>
+                <span class="title"
+                      i18n:translate=""
+                      tal:content="item/Title">
+                  Setup Item Title
+                </span>
+              </div>
+              <div class="small text-right"
+                   tal:define="count python:view.get_count(item)"
+                   tal:condition="python:count>0">
+                <span class="text-secondary">
+                  <span tal:content="count"></span>
+                </span>
+                <span i18n:translate="label_setupview_item"
+                      tal:condition="python:count == 1"
+                      class="text-secondary">Item</span>
+                <span i18n:translate="label_setupview_items"
+                      tal:condition="python:count > 1"
+                      class="text-secondary">Items</span>
+              </div>
+            </a>
+          </div>
+        </tal:tiles>
+      </div>
+
+    </div>
+
+  </body>
+</html>

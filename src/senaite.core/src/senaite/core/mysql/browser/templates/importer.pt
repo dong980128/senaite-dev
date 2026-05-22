@@ -1,0 +1,268 @@
+<metal:page use-macro="context/main_template/macros/master"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:tal="http://xml.zope.org/namespaces/tal"
+            xmlns:metal="http://xml.zope.org/namespaces/metal"
+         i18n:domain="senaite.core">
+
+    <metal:content fill-slot="content-core">
+
+        <style type="text/css">
+            .card {
+                background: #fff;
+                border: 1px solid #e6e6e6;
+                border-radius: 8px;
+                padding: 16px 18px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+                margin: 0 12px;
+            }
+
+            /* 表单：并排放置，宽度不足会自动换行 */
+            .grid {
+                display: grid;
+                grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+                grid-gap: 12px;
+                align-items: end;
+            }
+
+            label {
+                display: block;
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 4px;
+            }
+
+            input[type="text"], select, input[type="number"] {
+                width: 100%;
+                height: 34px;
+                padding: 6px 10px;
+                border: 1px solid #dcdcdc;
+                border-radius: 6px;
+                box-sizing: border-box;
+            }
+
+            .row { margin-top: 10px; }
+
+            .btn {
+                display: inline-block;
+                height: 36px;
+                line-height: 36px;
+                padding: 0 14px;
+                border-radius: 6px;
+                border: 1px solid #1976d2;
+                background: #1e88e5;
+                color: #fff;
+                text-decoration: none;
+                cursor: pointer;
+            }
+            .btn.gray { background: #6b7280; border-color: #6b7280; }
+
+            .msg { margin: 10px 12px; }
+            .ok {
+                color: #065f46;
+                background: #ecfdf5;
+                border: 1px solid #a7f3d0;
+                padding: 8px 10px;
+                border-radius: 6px;
+            }
+            .err {
+                color: #991b1b;
+                background: #fef2f2;
+                border: 1px solid #fecaca;
+                padding: 8px 10px;
+                border-radius: 6px;
+            }
+
+            /* 预览/样本表格 */
+            table.preview {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+                font-size: 13px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            table.preview th, table.preview td {
+                border: 1px solid #f0f0f0;
+                padding: 6px 8px;
+                vertical-align: top;        /* 结果列顶部对齐，避免被撑高 */
+                word-break: break-all;
+            }
+            table.preview thead th {
+                background: #f8f9fb;
+                font-weight: 600;
+            }
+
+            /* ===== 结果数据列：多列栅格 + 折叠 ===== */
+            .interims-wrap { position: relative; max-width: 760px; }
+            .interims-box {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(220px, 1fr)); /* 需要更紧凑可改为 3 列 */
+                gap: 6px 14px;
+                font-size: 12px;
+                line-height: 1.45;
+                max-height: 140px;      /* 初始折叠高度：两列约 10~14 条 */
+                overflow: hidden;
+                padding-right: 4px;
+            }
+            .interim-item {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis; /* 单条过长省略号 */
+            }
+            .interims-wrap.expanded .interims-box {
+                max-height: none;
+                overflow: visible;
+            }
+            .interims-toggle {
+                margin-top: 6px;
+                border: 0;
+                background: #f2f4f8;
+                padding: 4px 8px;
+                border-radius: 6px;
+                font-size: 12px;
+                cursor: pointer;
+            }
+        </style>
+
+        <!-- ====== 表单 ====== -->
+        <div class="card">
+            <form method="post" tal:attributes="action request/URL">
+                <input type="hidden" name="submit" value="1"/>
+                <div class="grid">
+                    <div>
+                        <label>选择实验</label>
+                        <select name="experiment">
+                            <option tal:repeat="exp view/experiments"
+                                     tal:attributes="value exp; selected python:exp == view.selected_experiment"
+                                     tal:content="exp">HLAv1
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>目标数据表</label>
+                        <select name="table">
+                            <option tal:repeat="tbl view/tables"
+                                     tal:attributes="value tbl; selected python:tbl == view.selected_table"
+                                     tal:content="tbl">hlav1
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>最大处理条数 (limit)</label>
+                        <input type="number" min="1" max="10000" name="limit" tal:attributes="value view/limit" />
+                    </div>
+
+                    <div>
+                        <label>预览（不写库）</label>
+                        <select name="dry_run">
+                            <option value="on" tal:attributes="selected python:view.dry_run">开启</option>
+                            <option value=""   tal:attributes="selected python:not view.dry_run">关闭</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="review_state" class="sr-only">状态过滤</label>
+                        <input type="text"
+                               name="review_state"
+                                 tal:attributes="value view/review_state"
+                               placeholder="状态过滤（逗号分隔）"
+                               style="width: 220px; margin-left:10px;"/>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 预览：submit=1 + dry_run 保持 on -->
+                    <button type="submit" class="btn">预览</button>
+
+                    <!-- 执行：submit=1 + 把 dry_run 置空 -->
+                    <button type="submit" class="btn gray"
+                            onclick="this.form.dry_run.value='';">执行导入
+                    </button>
+
+                    <!-- 查看样本：peek_samples=1，避免触发导入 -->
+                    <button type="submit" class="btn"
+                            onclick="this.form.peek_samples.value='1'; this.form.submit.value='';">
+                        查看样本
+                    </button>
+                    <input type="hidden" name="peek_samples" value=""/>
+                </div>
+            </form>
+        </div>
+
+        <!-- ====== 消息/错误 ====== -->
+        <div class="msg" tal:condition="view/message">
+            <div class="ok" tal:content="view/message">message</div>
+        </div>
+        <div class="msg" tal:condition="view/error">
+            <div class="err" tal:content="view/error">error</div>
+        </div>
+
+        <!-- ====== 样本列表 ====== -->
+        <div class="card" tal:condition="view/samples">
+            <div style="margin-bottom:8px;">
+                样本列表（最多 <span tal:content="view/limit">50</span> 条）：
+            </div>
+            <table class="preview">
+                <thead>
+                <tr>
+                    <th>系统ID</th>
+                    <th>中心</th>
+                    <th>状态</th>
+                    <th>样本唯一识别码</th>
+                    <th>结果数据</th>
+                </tr>
+                </thead>
+                <tbody tal:define="rows view/samples">
+                <tr tal:repeat="row rows">
+                    <td tal:content="row/sample_id">Sample ID</td>
+                    <td tal:content="row/client">Client</td>
+                    <td tal:content="row/review_state">state</td>
+                    <td tal:content="row/subject_uid">SubjectUID</td>
+
+                    <!-- 关键：这里直接结构化插入 Python 生成的 interims 盒子 -->
+                    <td tal:content="structure row/result_data"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ====== 执行结果与预览 ====== -->
+        <div class="card" tal:condition="view/result">
+            <div>
+                处理总数：<strong tal:content="python:view.result.get('handled',0)">0</strong>；
+                实际写入：<strong tal:content="python:view.result.get('inserted',0)">0</strong>；
+                模式：<strong tal:content="python:'预览' if view.result.get('dry_run') else '执行'">预览</strong>
+            </div>
+            <div style="margin:10px 0 6px;">预览（最多 10 条）：</div>
+            <table class="listing" tal:condition="view/preview">
+                <thead>
+                <tr tal:define="cols view/preview_columns">
+                    <th tal:repeat="c cols" tal:content="c">列名</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr tal:repeat="row view/preview" tal:define="cols view/preview_columns">
+                    <td tal:repeat="c cols" tal:content="python: row.get(c, u'')">值</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 展开/收起脚本（如有全局打包JS可移走） -->
+        <script type="text/javascript">
+          document.addEventListener('click', function(e){
+            var btn = e.target.closest('.interims-toggle');
+            if(!btn) return;
+            var wrap = btn.closest('.interims-wrap');
+            if(!wrap) return;
+            var expanded = wrap.classList.toggle('expanded');
+            btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            btn.textContent = expanded ? '收起' : '展开';
+          }, {passive: true});
+        </script>
+
+    </metal:content>
+</metal:page>

@@ -1,0 +1,125 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+         metal:use-macro="context/main_template/macros/master">
+
+<body>
+<metal:main fill-slot="main">
+
+    <h1 tal:content="view/process_title">LabProcess</h1>
+
+    <p>
+        stages: <span tal:content="python:len(view.stages())">0</span>,
+        tasks: <span tal:content="view/tasks_count">0</span>
+    </p>
+
+    <div class="listingBar" style="margin:10px 0 15px 0;">
+        <div style="float:left;">
+            <a tal:attributes="href view/url_generate_tasks">Generate tasks</a>
+            <span style="padding:0 8px;">|</span>
+            <a tal:attributes="href view/url_tasks">View tasks</a>
+            <span style="padding:0 8px;">|</span>
+            <a tal:attributes="href view/url_edit_pipeline">Edit Pipeline</a>
+        </div>
+
+        <div style="float:right;">
+            <!-- 先留一个搜索框位置（不写 JS 也不影响样式） -->
+            <input type="text" placeholder="搜索" style="padding:4px 8px; width:220px;"/>
+        </div>
+        <div style="clear:both;"></div>
+    </div>
+
+
+    <tal:block tal:condition="python:getattr(view, 'pipeline_error', None)">
+        <div class="portalMessage error"
+                 tal:content="python:view.pipeline_error">
+            pipeline error
+        </div>
+    </tal:block>
+
+    <style type="text/css">
+        /* 让它像 setup listing：撑满 + 无竖线 + 只有横线 */
+        table.labprocess-listing {
+            width: 100% !important;
+            border: 0 !important;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        table.labprocess-listing thead th {
+            background: transparent !important;
+            border: 0 !important;
+            border-bottom: 2px solid #dcdcdc !important;
+            padding: 10px 10px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        table.labprocess-listing tbody td {
+            border: 0 !important;
+            border-bottom: 1px solid #e5e5e5 !important;
+            padding: 10px 10px;
+            vertical-align: top;
+        }
+
+        /* 斑马纹 + hover（更像图2） */
+        table.labprocess-listing tbody tr.odd {
+            background: #fff;
+        }
+
+        table.labprocess-listing tbody tr.even {
+            background: #fafafa;
+        }
+
+        table.labprocess-listing tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        /* 列宽策略：短列不换行，长列自动换行 */
+        .lp-col-step, .lp-col-mode, .lp-col-handler, .lp-col-users {
+            white-space: nowrap;
+        }
+
+        .lp-col-name, .lp-col-services {
+            white-space: normal;
+            word-break: break-word;
+        }
+    </style>
+
+    <table class="labprocess-listing">
+        <thead>
+        <tr>
+            <th class="lp-col-step">Step</th>
+            <th class="lp-col-name">Name</th>
+            <th class="lp-col-mode">Mode</th>
+            <th class="lp-col-services">Services</th>
+            <th class="lp-col-handler">Handler</th>
+            <th class="lp-col-users">Users</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr tal:repeat="st view/stages"
+                 tal:attributes="class python: (repeat['st'].odd() and 'odd' or 'even')">
+            <td class="lp-col-step" tal:content="python:st.get('step','')">01</td>
+            <td class="lp-col-name" tal:content="python:st.get('name','')">Stage</td>
+            <td class="lp-col-mode" tal:content="python:st.get('mode','analysis')">analysis</td>
+
+            <td class="lp-col-services"
+                     tal:content="python:u', '.join(view.format_services(st.get('services') or [])) if st.get('mode','analysis')=='analysis' else '-'">
+                -
+            </td>
+
+            <td class="lp-col-handler"
+                     tal:content="python:(st.get('handler') or '-') if st.get('mode','analysis')=='custom' else '-'">
+                -
+            </td>
+
+            <td class="lp-col-users" tal:content="python:', '.join(st.get('users') or [])">u1</td>
+        </tr>
+        </tbody>
+    </table>
+
+</metal:main>
+</body>
+</html>
