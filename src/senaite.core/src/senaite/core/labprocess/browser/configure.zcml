@@ -125,4 +125,32 @@
     permission="zope2.View"
   />
 
+  <browser:page
+    name="list-analysis-attachments"
+    for="bika.lims.interfaces.IAnalysisRequest"
+    class=".upload_analysis_file.ListAnalysisAttachmentsView"
+    permission="zope2.View"
+  />
+
+  <browser:page
+    name="list-remote-files"
+    for="bika.lims.interfaces.IAnalysisRequest"
+    class=".remote_file.ListRemoteFilesView"
+    permission="zope2.View"
+  />
+
+  <browser:page
+    name="fetch-remote-analysis-file"
+    for="bika.lims.interfaces.IAnalysisRequest"
+    class=".remote_file.FetchRemoteFileView"
+    permission="zope2.View"
+  />
+
+  <browser:page
+    name="fetch-all-remote-files"
+    for="bika.lims.interfaces.IAnalysisRequest"
+    class=".remote_file.FetchAllRemoteFilesView"
+    permission="zope2.View"
+  />
+
 </configure>

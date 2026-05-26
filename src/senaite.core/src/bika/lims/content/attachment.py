@@ -275,9 +275,9 @@ class Attachment(BaseFolder, ClientAwareMixin):
             mime, _ = guess_type(value.filename)
             if mime:
                 kwargs["content_type"] = mime
-                logger.info("📎 设置附件 content_type 为：%s (文件名：%s)" % (mime, value.filename))
+                logger.info(u"set attachment content_type: %s (filename: %s)" % (mime, value.filename))
             else:
-                logger.warning("⚠️ 未识别 MIME 类型，文件名：%s" % value.filename)
+                logger.warning(u"unknown MIME type for filename: %s" % value.filename)
 
         field.set(self, value, **kwargs)
 

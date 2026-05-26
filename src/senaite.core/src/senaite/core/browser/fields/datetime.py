@@ -49,7 +49,7 @@ class DateTimeField(BaseField):
         "max": dtime.datetime.max,
         "with_time": 1,  # set to False if you want date only objects
         "with_date": 1,  # set to False if you want time only objects
-        })
+    })
     security = ClassSecurityInfo()
 
     def validate(self, value, instance, errors=None, **kwargs):
@@ -209,13 +209,11 @@ class DateTimeField(BaseField):
 
 InitializeClass(DateTimeField)
 
-
 registerField(
     DateTimeField,
     title="DateTime Field",
     description="An improved DateTimeField, which also allows time "
                 "or date only specifications.")
-
 
 registerPropertyType("with_time", "boolean", DateTimeField)
 registerPropertyType("with_date", "boolean", DateTimeField)
